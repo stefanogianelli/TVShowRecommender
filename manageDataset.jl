@@ -1,5 +1,7 @@
+path = string(pwd(),"\\TVShowRecommender")
+
 #load the dataset
-dataset = readdlm("C:\\Users\\Stefano\\Desktop\\auditel.txt", ',', use_mmap=true)
+dataset = readdlm("$path\\dataset\\data.txt", ',', use_mmap=true)
 
 #remove the 14th and the 19th weeks
 datasetSize = size(dataset)[1]
@@ -14,7 +16,7 @@ while i <= datasetSize
 end
 
 #export the new dataset
-writecsv("C:\\Users\\Stefano\\Desktop\\auditel_new.txt", dataset)
+#writecsv("C:\\Users\\Stefano\\Desktop\\dataset_new.csv", dataset)
 
 #=
 Build the User-Rating Matrix from the original dataset
