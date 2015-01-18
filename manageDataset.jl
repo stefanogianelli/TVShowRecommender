@@ -8,14 +8,16 @@ eventInfo = readdlm("$path\\dataset\\eventLookup.txt", '\t', header=true, use_mm
 eventInfo = eventInfo[1][:,[2,4]]
 
 #cerco e salvo i programId di 8 giorni consecutivi
-#TODO: scegliere a caso la data di inizio
+#lo script legge tutti i programmi presenti nel file, è necessario dunque filtrare gli eventi di interesse manualmente
 ids = Int64[]
 
 for i=1:size(eventInfo)[1]
-  push!(ids, eventInfo[i,1])
+  #verifico se il programId corrente non sia già stato inserito
+  index = exixstProgramId(eventInfo[i,1], eventInfo[:,1], i)
+  if index != -1
+    push!(ids, eventInfo[i,1])
+  end
 end
-
-ids
 
 #carico il dataset
 dataset = readdlm("$path\\dataset\\data.txt", ',', use_mmap=true)
@@ -47,7 +49,8 @@ function buildURM (dataset)
   datasetSize = size(dataset)[1]
   i = 1
   while i <= datasetSize
-    index = exixstProgramId(dataset[i,2], dataset, i)
+    #verifico se il programId non sia già presente
+    index = exixstProgramId(dataset[i,2], dataset[:,2], i)
     if index != -1
       dataset[index,3] += dataset[i,3]
       dataset = dataset[[1:(i-1), (i+1):end], :]
@@ -65,7 +68,7 @@ Ritorna il numero di riga in cui è stato trovato l'id, -1 altrimenti
 =#
 function exixstProgramId (id, dataset, size)
   for i = 1:(size-1)
-    if dataset[i,2] == id
+    if dataset[i] == id
       return i
     end
   end
