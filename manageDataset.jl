@@ -1,8 +1,8 @@
 #ricavo il percorso base da cui caricare i dataset
 path = string(pwd(),"\\TVShowRecommender")
 
-#carico la matrice con le informazioni sui programmi di testing
-trainingInfo = readdlm("$path\\dataset\\testing.txt", '\t', use_mmap=true)
+#carico la matrice con le informazioni sui programmi di training
+trainingInfo = readdlm("$path\\dataset\\training.txt", '\t', use_mmap=true)
 
 #considero solo le colonne programId e start
 trainingInfo = trainingInfo[:,[2,4]]
@@ -13,10 +13,12 @@ ids = Int64[]
 
 for i=1:size(trainingInfo)[1]
   #verifico se il programId corrente non sia già stato inserito
-  if !in(trainingInfo[i], ids)
+  if !in(trainingInfo[i,1], ids)
     push!(ids, trainingInfo[i,1])
   end
 end
+
+ids
 
 #carico il dataset di training
 training = readdlm("$path\\dataset\\data.txt", ',', use_mmap=true)
@@ -56,12 +58,12 @@ end
 #writecsv("$path\\dataset\\training.csv", dataset)
 
 #=
-Controlla se l'id esiste già nel dataset nell'intervallo da 1 a size
+Controlla se l'id esiste già nel vettore "array" nell'intervallo da 1 a size
 Ritorna il numero di riga in cui è stato trovato l'id, -1 altrimenti
 =#
-function exixstProgramId (id, dataset, size)
+function exixstProgramId (id, array, size)
   for i = 1:(size-1)
-    if dataset[i] == id
+    if array[i] == id
       return i
     end
   end
