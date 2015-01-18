@@ -2,19 +2,19 @@
 path = string(pwd(),"\\TVShowRecommender")
 
 #carico la matrice con le informazioni sui programmi di testing
-testingInfo = readdlm("$path\\dataset\\testing.txt", '\t', use_mmap=true)
+trainingInfo = readdlm("$path\\dataset\\testing.txt", '\t', use_mmap=true)
 
 #considero solo le colonne programId e start
-testingInfo = testingInfo[1][:,[2,4]]
+trainingInfo = trainingInfo[:,[2,4]]
 
 #cerco e salvo i programId di 8 giorni consecutivi
 #lo script legge tutti i programmi presenti nel file, è necessario dunque filtrare gli eventi di interesse manualmente
 ids = Int64[]
 
-for i=1:size(eventInfo)[1]
+for i=1:size(trainingInfo)[1]
   #verifico se il programId corrente non sia già stato inserito
-  if !in(testingInfo[i], ids)
-    push!(ids, testingInfo[i,1])
+  if !in(trainingInfo[i], ids)
+    push!(ids, trainingInfo[i,1])
   end
 end
 
@@ -43,10 +43,12 @@ while i <= trainingSize
         i += 1
       end
     else
-      i += 1
+      training = training[[1:(i-1), (i+1):end], :]
+      trainingSize -= 1
     end
   else
-    i += 1
+    training = training[[1:(i-1), (i+1):end], :]
+    trainingSize -= 1
   end
 end
 
