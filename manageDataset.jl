@@ -1,11 +1,11 @@
 #ricavo il percorso base da cui caricare i dataset
 path = string(pwd(),"\\TVShowRecommender")
 
-#carico la matrice con le informazioni sui programmi
-eventInfo = readdlm("$path\\dataset\\eventLookup.txt", '\t', header=true, use_mmap=true)
+#carico la matrice con le informazioni sui programmi di testing
+testingInfo = readdlm("$path\\dataset\\testing.txt", '\t', use_mmap=true)
 
 #considero solo le colonne programId e start
-eventInfo = eventInfo[1][:,[2,4]]
+testingInfo = testingInfo[1][:,[2,4]]
 
 #cerco e salvo i programId di 8 giorni consecutivi
 #lo script legge tutti i programmi presenti nel file, è necessario dunque filtrare gli eventi di interesse manualmente
@@ -13,54 +13,45 @@ ids = Int64[]
 
 for i=1:size(eventInfo)[1]
   #verifico se il programId corrente non sia già stato inserito
-  index = exixstProgramId(eventInfo[i,1], eventInfo[:,1], i)
-  if index != -1
-    push!(ids, eventInfo[i,1])
+  if !in(testingInfo[i], ids)
+    push!(ids, testingInfo[i,1])
   end
 end
 
-#carico il dataset
-dataset = readdlm("$path\\dataset\\data.txt", ',', use_mmap=true)
+#carico il dataset di training
+training = readdlm("$path\\dataset\\data.txt", ',', use_mmap=true)
 
-#rimuovo la 14esima e 19esima settimana
-datasetSize = size(dataset)[1]
+#considero solo le colonne: userIdx, programIdx, duration
+training = training[:,[6,7,9]]
+
+#rimuovo i programIdx duplicati e sommo le loro durate
+#considero solo i programmi selezionati nel vettore ids
+trainingSize = size(training)[1]
 i = 1
-while i <= datasetSize
-  if dataset[i,3] == 14 || dataset[i,3] == 19
-    dataset = dataset[[1:(i-1), (i+1):end], :]
-    datasetSize -= 1
+while i <= trainingSize
+  #non considero il programma se siamo nella 14esima o 19esima settimana
+  if training[i,3] != 14 && training[i,3] != 19
+    #verifico che il programId corrente sia presente nel vettore ids
+    if in(training[i,2], ids)
+      #verifico se il programId non sia già presente
+      index = exixstProgramId(training[i,2], training[:,2], i)
+      if index != -1
+        training[index,3] += training[i,3]
+        training = training[[1:(i-1), (i+1):end], :]
+        trainingSize -= 1
+      else
+        i += 1
+      end
+    else
+      i += 1
+    end
   else
     i += 1
   end
 end
 
-#esporto il nuovo dataset
-#writecsv("C:\\Users\\Stefano\\Desktop\\dataset_new.csv", dataset)
-
-#=
-Costruisco la User-Rating Matrix a partire dal dataset
-Vengono inoltre gestiti i duplicati
-Ritorna la URM creata
-=#
-function buildURM (dataset)
-  #considero solo le colonne: userIdx, programIdx, duration
-  dataset = dataset[:,[6,7,9]]
-  #rimuovo i programIdx duplicati e sommo le loro durate
-  datasetSize = size(dataset)[1]
-  i = 1
-  while i <= datasetSize
-    #verifico se il programId non sia già presente
-    index = exixstProgramId(dataset[i,2], dataset[:,2], i)
-    if index != -1
-      dataset[index,3] += dataset[i,3]
-      dataset = dataset[[1:(i-1), (i+1):end], :]
-      datasetSize -= 1
-    else
-      i += 1
-    end
-  end
-  return dataset
-end
+#esporto il nuovo dataset di training
+#writecsv("$path\\dataset\\training.csv", dataset)
 
 #=
 Controlla se l'id esiste già nel dataset nell'intervallo da 1 a size
