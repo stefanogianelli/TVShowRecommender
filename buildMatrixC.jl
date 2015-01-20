@@ -53,13 +53,14 @@ trainingSize = size(training)[1]
 i = 1
 while i <= idsSize
   j=1
-  while j <= trainingSize && training[j,3] == ids[i]
-    matrixA[i,1]=training[j,1]
-    matrixA[i,2]=training[j,2]
+  while j < trainingSize && training[j,3] != ids[i]
     j += 1
   end
+  matrixA[i,1]=training[j,1]
+  matrixA[i,2]=training[j,2]
   i += 1
 end
+
 
 matrixA
 
