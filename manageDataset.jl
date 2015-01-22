@@ -18,10 +18,11 @@ for i=1:size(trainingInfo)[1]
   end
 end
 
-ids
-
 #carico il dataset di training
-training = readdlm("$path\\dataset\\data.txt", ',', use_mmap=true)
+dataset = readdlm("$path\\dataset\\data.txt", ',', use_mmap=true)
+
+#creo una copia per la matrice di training
+training = dataset
 
 #considero solo le colonne: userIdx, programIdx, duration
 training = training[:,[6,7,9]]
@@ -45,20 +46,27 @@ while i <= trainingSize
         i += 1
       end
     else
+      #rimuovo la riga
       training = training[[1:(i-1), (i+1):end], :]
       trainingSize -= 1
     end
   else
+    #rimuovo la riga
     training = training[[1:(i-1), (i+1):end], :]
     trainingSize -= 1
   end
 end
 
+#calcolo la matrice S tramite cosine similarity
+
+#calcolo la matrice C
+#importare qui il codice del file buildMatrixC
+
 #esporto il nuovo dataset di training
 #writecsv("$path\\dataset\\training.csv", dataset)
 
 #=
-Controlla se l'id esiste già nel vettore "array" nell'intervallo da 1 a size
+Controlla se l'id esiste già nel vettore "array", nell'intervallo da 1 a size
 Ritorna il numero di riga in cui è stato trovato l'id, -1 altrimenti
 =#
 function exixstProgramId (id, array, size)
@@ -68,4 +76,8 @@ function exixstProgramId (id, array, size)
     end
   end
   return -1
+end
+
+#calcola la cosine similarity tra due vettori?
+function cosineSimilarity ()
 end
