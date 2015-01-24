@@ -1,3 +1,5 @@
+using Optim
+
 #ricavo il percorso base da cui caricare i dataset
 #N.B.: pwd ritorna la cartella utente!
 path = string(pwd(),"\\TVShowRecommender")
@@ -93,6 +95,9 @@ end
 
 #calcolo la matrice C
 #importare qui il codice del file buildMatrixC
+
+#calcolo la matrice M tramite l'SGD
+#M = optimize(f, g!, method = :gradient_descent)
 
 #esporto il nuovo dataset di training?
 #writecsv("$path\\dataset\\training.csv", dataset)
