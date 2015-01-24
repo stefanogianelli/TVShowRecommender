@@ -75,15 +75,15 @@ end
 URM = zeros(size(users)[1], size(ids)[1])
 for i=1:size(ratingsTable)[1]
   #cerco la riga corrispondente all'utente corrente
-  row = findElem(ratingsTable[i,1], users, size(users)[1])
+  row = findElem(ratingsTable[i,1], users, length(users))
   #cerco la colonna corrispondente al programma corrente
-  col = findElem(ratingsTable[i,2], ids, size(ids)[1])
+  col = findElem(ratingsTable[i,2], ids, length(ids))
   #inserisco la durata nella posizione (row,col)
   URM[row,col] = ratingsTable[i,3]
 end
 
 #calcolo la matrice S tramite adjusted cosine similarity
-S = ones(size(ids)[1], size(ids)[1])
+S = ones(length(ids), length(ids))
 for i=1:size(URM)[2]
   for j=i+1:size(URM)[2]
     #sfrutto la simmetria della matrice S per il calcolo della similarità
@@ -102,8 +102,8 @@ Controlla se l'id esiste già nel vettore "array", nell'intervallo da 1 a size
 Ritorna il numero di riga in cui è stato trovato l'id, -1 altrimenti
 =#
 function findElem (id, array, size)
-  if size > size(array)[1]
-    size = size(array)[1]
+  if size > length(array)
+    size = length(array)
   end
   for i = 1:size
     if array[i] == id
@@ -115,7 +115,7 @@ end
 
 #calcola la cosine similarity tra due vettori
 function cosineSimilarity (a, b)
-  dim = size(a)[1]
+  dim = length(a)
   #calcolo il numeratore
   num = 0
   #calcolo il denominatore
