@@ -25,24 +25,24 @@ dataset = readdlm("$path\\dataset\\data.txt", ',', use_mmap=true)
 #creo una copia per la tabella dei ratings
 ratingsTable = dataset
 
-#considero solo le colonne: userIdx, programIdx, duration
-ratingsTable = ratingsTable[:,[6,7,9]]
+#considero solo le colonne: weekIdx, userIdx, programIdx, duration
+ratingsTable = ratingsTable[:,[3,6,7,9]]
 
 #rimuovo i programIdx duplicati e sommo le loro durate
 #considero solo i programmi selezionati nel vettore ids
 #vengono inoltre rimosse le settimane 14 e 19
-ratingsTableSize = size(training)[1]
+ratingsTableSize = size(ratingsTable)[1]
 i = 1
 while i <= ratingsTableSize
   #non considero il programma se siamo nella 14esima o 19esima settimana
-  if ratingsTable[i,3] != 14 && ratingsTable[i,3] != 19
+  if ratingsTable[i,1] != 14 && ratingsTable[i,1] != 19
     #verifico che il programId corrente sia presente nel vettore ids
-    if in(ratingsTable[i,2], ids)
-      #verifico se il programId non sia già presente
-      index = findElem(ratingsTable[i,2], ratingsTable[:,2], i-1)
+    if in(ratingsTable[i,3], ids)
+      #verifico se la coppia (userId, programId) non sia già presente
+      index = findExistingRating(ratingsTable[i,2], ratingsTable[i,3], i-1)
       if index != -1
-        #se il programId esiste viene sommato il valore della duration
-        ratingsTable[index,3] += ratingsTable[i,3]
+        #se la coppia (userId, programId) esiste viene sommato il valore della duration
+        ratingsTable[index,4] += ratingsTable[i,4]
         ratingsTable = ratingsTable[[1:(i-1), (i+1):end], :]
         ratingsTableSize -= 1
       else
@@ -140,11 +140,17 @@ Controlla se l'id esiste già nel vettore "array", nell'intervallo da 1 a size
 Ritorna il numero di riga in cui è stato trovato l'id, -1 altrimenti
 =#
 function findElem (id, array, size)
-  if size > length(array)
-    size = length(array)
-  end
   for i = 1:size
     if array[i] == id
+      return i
+    end
+  end
+  return -1
+end
+
+function findExistingRating (user, program, size)
+  for i=1:size
+    if ratingsTable[i,2] == user && ratingsTable[i,3] == program
       return i
     end
   end
