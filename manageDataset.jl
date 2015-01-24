@@ -22,64 +22,64 @@ end
 #carico il dataset
 dataset = readdlm("$path\\dataset\\data.txt", ',', use_mmap=true)
 
-#creo una copia per la matrice di training
-training = dataset
+#creo una copia per la tabella dei ratings
+ratingsTable = dataset
 
 #considero solo le colonne: userIdx, programIdx, duration
-training = training[:,[6,7,9]]
+ratingsTable = ratingsTable[:,[6,7,9]]
 
 #rimuovo i programIdx duplicati e sommo le loro durate
 #considero solo i programmi selezionati nel vettore ids
 #vengono inoltre rimosse le settimane 14 e 19
-trainingSize = size(training)[1]
+ratingsTableSize = size(training)[1]
 i = 1
-while i <= trainingSize
+while i <= ratingsTableSize
   #non considero il programma se siamo nella 14esima o 19esima settimana
-  if training[i,3] != 14 && training[i,3] != 19
+  if ratingsTable[i,3] != 14 && ratingsTable[i,3] != 19
     #verifico che il programId corrente sia presente nel vettore ids
-    if in(training[i,2], ids)
+    if in(ratingsTable[i,2], ids)
       #verifico se il programId non sia già presente
-      index = findElem(training[i,2], training[:,2], i-1)
+      index = findElem(ratingsTable[i,2], ratingsTable[:,2], i-1)
       if index != -1
         #se il programId esiste viene sommato il valore della duration
-        training[index,3] += training[i,3]
-        training = training[[1:(i-1), (i+1):end], :]
-        trainingSize -= 1
+        ratingsTable[index,3] += ratingsTable[i,3]
+        ratingsTable = ratingsTable[[1:(i-1), (i+1):end], :]
+        ratingsTableSize -= 1
       else
         #altrimenti passo alla riga successiva
         i += 1
       end
     else
       #rimuovo la riga
-      training = training[[1:(i-1), (i+1):end], :]
-      trainingSize -= 1
+      ratingsTable = ratingsTable[[1:(i-1), (i+1):end], :]
+      ratingsTableSize -= 1
     end
   else
     #rimuovo la riga
-    training = training[[1:(i-1), (i+1):end], :]
-    trainingSize -= 1
+    ratingsTable = ratingsTable[[1:(i-1), (i+1):end], :]
+    ratingsTableSize -= 1
   end
 end
 
 #creo un vettore con la lista degli utenti
 users = Int64[]
 
-for i=1:size(training)[1]
+for i=1:size(ratingsTable)[1]
   #verifico se l'userId corrente non sia già stato inserito
-  if !in(training[i,1], users)
-    push!(users, training[i,1])
+  if !in(ratingsTable[i,1], users)
+    push!(users, ratingsTable[i,1])
   end
 end
 
 #preparo la URM
 URM = zeros(size(users)[1], size(ids)[1])
-for i=1:size(training)[1]
+for i=1:size(ratingsTable)[1]
   #cerco la riga corrispondente all'utente corrente
-  row = findElem(training[i,1], users, size(users)[1])
+  row = findElem(ratingsTable[i,1], users, size(users)[1])
   #cerco la colonna corrispondente al programma corrente
-  col = findElem(training[i,2], ids, size(ids)[1])
-  #posizione la durata nella posizione (row,col)
-  URM[row,col] = training[i,3]
+  col = findElem(ratingsTable[i,2], ids, size(ids)[1])
+  #inserisco la durata nella posizione (row,col)
+  URM[row,col] = ratingsTable[i,3]
 end
 
 #calcolo la matrice S tramite adjusted cosine similarity
