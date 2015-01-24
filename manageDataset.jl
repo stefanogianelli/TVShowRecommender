@@ -19,7 +19,7 @@ for i=1:size(trainingInfo)[1]
   end
 end
 
-#carico il dataset di training
+#carico il dataset
 dataset = readdlm("$path\\dataset\\data.txt", ',', use_mmap=true)
 
 #creo una copia per la matrice di training
@@ -39,7 +39,7 @@ while i <= trainingSize
     #verifico che il programId corrente sia presente nel vettore ids
     if in(training[i,2], ids)
       #verifico se il programId non sia già presente
-      index = findElem(training[i,2], training[:,2], i)
+      index = findElem(training[i,2], training[:,2], i-1)
       if index != -1
         #se il programId esiste viene sommato il valore della duration
         training[index,3] += training[i,3]
@@ -102,7 +102,10 @@ Controlla se l'id esiste già nel vettore "array", nell'intervallo da 1 a size
 Ritorna il numero di riga in cui è stato trovato l'id, -1 altrimenti
 =#
 function findElem (id, array, size)
-  for i = 1:(size-1)
+  if size > size(array)[1]
+    size = size(array)[1]
+  end
+  for i = 1:size
     if array[i] == id
       return i
     end
