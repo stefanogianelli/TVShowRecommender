@@ -61,6 +61,9 @@ while i <= ratingsTableSize
   end
 end
 
+#rimuovo la colonna della settimana, non più necessaria
+ratingsTable = ratingsTable[:,[2,3,4]]
+
 #creo un vettore con la lista degli utenti
 users = Int64[]
 
