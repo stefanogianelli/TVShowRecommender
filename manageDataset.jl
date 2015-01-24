@@ -182,7 +182,11 @@ function cosineSimilarity (a, b)
   end
   den = sqrt(den1)*sqrt(den2)
   #restituisco la similarità totale
-  return num / den
+  if den == 0
+    return 0
+  else
+    return num / den
+  end
 end
 
 #calcola la media dei ratings dati dall'utente n
