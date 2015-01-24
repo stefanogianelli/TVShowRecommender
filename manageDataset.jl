@@ -89,12 +89,48 @@ S = ones(length(ids), length(ids))
 for i=1:size(URM)[2]
   for j=i+1:size(URM)[2]
     #sfrutto la simmetria della matrice S per il calcolo della similarità
-    S[i,j] = S[j,i] = cosineSimilarity(URM[:,i], URM[:,j])
+    res = cosineSimilarity(URM[:,i], URM[:,j])
+    S[i,j] = res
+    S[j,i] = res
   end
 end
 
 #calcolo la matrice C
-#importare qui il codice del file buildMatrixC
+#considero solo le colonne: genreIdx, subGenreIdx, programIdx
+genreTable = dataset
+genreTable = genreTable[:,[4,5,7]]
+
+#Inizializzo matrice A = (programmi,genere+sottogenere)
+idsSize = size(ids)[1]
+matrixA=ones( idsSize , 2 )
+
+genreTableSize = size(genreTable)[1]
+i = 1
+while i <= idsSize
+  j=1
+  while j < genreTableSize && genreTable[j,3] != ids[i]
+    j += 1
+  end
+  matrixA[i,1]=genreTable[j,1]
+  matrixA[i,2]=genreTable[j,2]
+  i += 1
+end
+
+A_rows = size(matrixA)[1]
+C = zeros(A_rows,A_rows)
+for i = 1:(A_rows-1)
+  for l = i+1:(A_rows)
+    k=0.0
+     if matrixA[i,1]==matrixA[l,1]!=1
+      k=0.5
+      if matrixA[i,2]==matrixA[l,2]!=1
+       k=1.0
+      end
+     end
+    C[i,l]=k
+    C[l,i]=k
+  end
+end
 
 #calcolo la matrice M tramite l'SGD
 #M = optimize(f, g!, method = :gradient_descent)
