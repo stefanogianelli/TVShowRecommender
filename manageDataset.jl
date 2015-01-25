@@ -2,8 +2,11 @@
 #N.B.: pwd ritorna la cartella utente!
 path = string(pwd(),"\\TVShowRecommender")
 
+#permette di scegliere se usare la cartella di test o quella con i dati completi
+dir = "test"
+
 #carico la matrice con le informazioni sui programmi di training
-trainingInfo = readdlm("$path\\dataset\\training.txt", '\t', use_mmap=true)
+trainingInfo = readdlm("$path\\$dir\\training.txt", '\t', use_mmap=true)
 
 #considero solo le colonne programId e start
 trainingInfo = trainingInfo[:,[2,4]]
@@ -20,7 +23,7 @@ for i=1:size(trainingInfo)[1]
 end
 
 #carico il dataset
-dataset = readdlm("$path\\dataset\\data.txt", ',', use_mmap=true)
+dataset = readdlm("$path\\$dir\\data.txt", ',', use_mmap=true)
 
 #creo una copia per la tabella dei ratings
 ratingsTable = dataset
