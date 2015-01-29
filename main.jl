@@ -1,5 +1,6 @@
 #ricavo il percorso base da cui caricare i dataset
 #N.B.: pwd ritorna la cartella utente!
+#testare -> cd(dirname(@__FILE__))
 path = string(pwd(),"\\TVShowRecommender")
 
 #permette di scegliere se usare la cartella di test o quella con i dati completi
