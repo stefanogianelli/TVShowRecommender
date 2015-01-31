@@ -2,7 +2,7 @@
 cd(dirname(@__FILE__))
 
 #permette di scegliere se usare la cartella di test o quella con i dati completi
-dir = "test"
+dir = "dataset"
 
 #carico la matrice con le informazioni sui programmi di training
 trainingInfo = readdlm(".\\$dir\\training.txt", '\t', use_mmap=true)
@@ -148,21 +148,21 @@ tol = 1e-6
 miter = 1000
 
 #dimensione passo
-alpha = 0.002
+alpha = 0.0015
 
 #inizializzo la matrice M
-M = zeros(length(ids),length(ids))
+M = Mnew = zeros(length(ids),length(ids))
+fval = object(M)
 
 #calcolo la matrice M ottimale
 i = 1
 while i <= miter && object(M) > tol
-  fval = object(M)
-  @printf "-----------------------\niter = %d\nF = %f\n" i fval
-  Mnew = M - alpha * grad(M)
+  index = rand(1:size(M)[2])
+  Mnew[index,:] = M[index,:] - alpha * grad(M)[index,:]
   if (object(Mnew) < fval)
+    @printf "-----------------------\niter = %d\nF = %f\n" i object(Mnew)
     M = Mnew
-  else
-    return
+    fval = object(M)
   end
   i += 1
 end
