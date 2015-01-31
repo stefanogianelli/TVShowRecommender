@@ -7,32 +7,22 @@ Ha un minimo in circa 1
 =#
 
 #tolleranza
-tol = 1e-6
+tol = 1e-5
 
 #numero massimo iterazioni
-miter = 100
+miter = 10000
 
 #dimensione passo
-alpha = alphaPrec = 0
-deltaAlpha = 0.01
+alpha = 0.002
 
 #inizializzo il vettore x
-x = xnew = [0,0]
-fval = rosenbrock(x)
+x = [0,0]
 
 #calcolo il vettore x ottimale
 i = 1
 while i <= miter && rosenbrock(x) > tol
-  @printf "F = %f\nalpha = %f\nx = [%f , %f]\n" rosenbrock(x) alpha x[1] x[2]
-  xnew = x - alpha * grad(x)
-  if (rosenbrock(xnew) <= fval)
-    alphaPrec = alpha
-    alpha = alpha + deltaAlpha
-    x = xnew
-  else
-    alpha = alphaPrec - 10 * deltaAlpha
-  end
-  fval = rosenbrock(x)
+  @printf "----------\niter = %d\nF = %f\nx = [%f , %f]\n" i rosenbrock(x) x[1] x[2]
+  x = x - alpha * grad(x)
   i += 1
 end
 
