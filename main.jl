@@ -137,10 +137,41 @@ for i = 1:(A_rows-1)
   end
 end
 
-#calcolo la matrice M tramite l'SGD
+#eseguo i calcoli per il gradiente che non devono essere rifatti ogni volta
+Q = transpose(C)*S*C
+T = transpose(C)*C
 
-#esporto il nuovo dataset di training?
-#writecsv(".\\dataset\\training.csv", dataset)
+#tolleranza
+tol = 1e-6
+
+#numero massimo iterazioni
+miter = 1000
+
+#dimensione passo
+alpha = 0.002
+
+#inizializzo la matrice M
+M = zeros(length(ids),length(ids))
+
+#calcolo la matrice M ottimale
+i = 1
+while i <= miter && object(M) > tol
+  @printf "-----------------------\niter = %d\nF = %f\n" i object(M)
+  M = M - alpha * grad(M)
+  i += 1
+end
+
+M
+
+#definisco la funzione obiettivo
+function object (X::Matrix)
+  return vecnorm(S - C * X * transpose(C));
+end
+
+#restituisce il gradiente della funzione obiettivo
+function grad(X::Matrix)
+  return 2 * T * X * T - 2 *Q
+end
 
 #=
 Controlla se l'id esiste già nel vettore "array", nell'intervallo da 1 a size

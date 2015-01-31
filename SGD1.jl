@@ -20,7 +20,7 @@ miter = 10000
 #ottimizzazione: non fissarlo, ma dedurlo ad ogni passaggio
 alpha = 0.002
 
-#inizializzo la matrice M a 1
+#inizializzo la matrice M
 M = zeros(length(ids),length(ids))
 
 #calcolo la matrice M ottimale
