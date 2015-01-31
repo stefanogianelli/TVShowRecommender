@@ -1,8 +1,8 @@
 #---- parte di supporto, da cancellare
 ids = [1,2,3]
 
-S = ones(length(ids),length(ids))
-C = ones(length(ids),length(ids))
+S = rand(-1:1, length(ids),length(ids))
+C = rand(0:1, length(ids),length(ids))
 
 #---- fine parte di supporto
 
@@ -14,10 +14,9 @@ T = transpose(C)*C
 tol = 1e-6
 
 #numero massimo iterazioni
-miter = 10000
+miter = 1000
 
 #dimensione passo
-#ottimizzazione: non fissarlo, ma dedurlo ad ogni passaggio
 alpha = 0.002
 
 #inizializzo la matrice M
@@ -26,8 +25,14 @@ M = zeros(length(ids),length(ids))
 #calcolo la matrice M ottimale
 i = 1
 while i <= miter && object(M) > tol
-  @printf "-----------------------\niter = %d\nF = %f\n" i object(M)
-  M = M - alpha * grad(M)
+  fval = object(M)
+  @printf "-----------------------\niter = %d\nF = %f\n" i fval
+  Mnew = M - alpha * grad(M)
+  if (object(Mnew) < fval)
+    M = Mnew
+  else
+    return
+  end
   i += 1
 end
 
