@@ -5,8 +5,12 @@ cd(dirname(@__FILE__))
 dir = "dataset"
 
 #carico la matrice con le informazioni sui programmi di training
+println("Carico la matrice con le informazioni dei programmi ...")
+tic()
 trainingInfo = readdlm(".\\$dir\\training.txt", '\t', use_mmap=true)
+toc()
 
+println("Salvo i programId ...")
 #considero solo le colonne programId e start
 trainingInfo = trainingInfo[:,[2,4]]
 
@@ -14,17 +18,20 @@ trainingInfo = trainingInfo[:,[2,4]]
 #lo script legge tutti i programmi presenti nel file, è necessario dunque filtrare gli eventi di interesse manualmente
 ids = Int64[]
 
+tic()
 for i=1:size(trainingInfo)[1]
   #verifico se il programId corrente non sia già stato inserito
   if !in(trainingInfo[i,1], ids)
     push!(ids, trainingInfo[i,1])
   end
 end
-
-ids
+toc()
 
 #carico il dataset
+println("Carico il dataset ...")
+tic()
 dataset = readdlm(".\\$dir\\data.txt", ',', use_mmap=true)
+toc()
 
 #creo una copia per la tabella dei ratings
 ratingsTable = dataset
@@ -35,6 +42,8 @@ ratingsTable = ratingsTable[:,[3,6,7,9]]
 #rimuovo i programIdx duplicati e sommo le loro durate
 #considero solo i programmi selezionati nel vettore ids
 #vengono inoltre rimosse le settimane 14 e 19
+println("Rimuovo i duplicati ...")
+tic()
 ratingsTableSize = size(ratingsTable)[1]
 i = 1
 while i <= ratingsTableSize
@@ -64,6 +73,7 @@ while i <= ratingsTableSize
     ratingsTableSize -= 1
   end
 end
+toc()
 
 #rimuovo la colonna della settimana, non più necessaria
 ratingsTable = ratingsTable[:,[2,3,4]]
@@ -71,14 +81,19 @@ ratingsTable = ratingsTable[:,[2,3,4]]
 #creo un vettore con la lista degli utenti
 users = Int64[]
 
+println("Salvo la lista degli utenti univoci ...")
+tic()
 for i=1:size(ratingsTable)[1]
   #verifico se l'userId corrente non sia già stato inserito
   if !in(ratingsTable[i,1], users)
     push!(users, ratingsTable[i,1])
   end
 end
+toc()
 
 #preparo la URM
+println("Costruisco la URM ...")
+tic()
 URM = zeros(size(users)[1], size(ids)[1])
 for i=1:size(ratingsTable)[1]
   #cerco la riga corrispondente all'utente corrente
@@ -88,8 +103,11 @@ for i=1:size(ratingsTable)[1]
   #inserisco la durata nella posizione (row,col)
   URM[row,col] = ratingsTable[i,3]
 end
+toc()
 
 #calcolo la matrice S tramite adjusted cosine similarity
+println("Calcolo la matrice S ...")
+tic()
 S = ones(length(ids), length(ids))
 for i=1:size(URM)[2]
   for j=i+1:size(URM)[2]
@@ -99,6 +117,7 @@ for i=1:size(URM)[2]
     S[j,i] = res
   end
 end
+toc()
 
 #calcolo la matrice C
 #considero solo le colonne: genreIdx, subGenreIdx, programIdx
@@ -121,6 +140,8 @@ while i <= idsSize
   i += 1
 end
 
+println("Calcolo la matrice C ...")
+tic()
 A_rows = size(matrixA)[1]
 C = zeros(A_rows,A_rows)
 for i = 1:(A_rows-1)
@@ -136,6 +157,7 @@ for i = 1:(A_rows-1)
     C[l,i]=k
   end
 end
+toc()
 
 #eseguo i calcoli per il gradiente che non devono essere rifatti ogni volta
 Q = transpose(C)*S*C
@@ -155,6 +177,8 @@ M = Mnew = zeros(length(ids),length(ids))
 fval = object(M)
 
 #calcolo la matrice M ottimale
+println("Calcolo la matrice M ...")
+tic()
 i = 1
 while i <= miter && object(M) > tol
   index = rand(1:size(M)[2])
@@ -166,6 +190,7 @@ while i <= miter && object(M) > tol
   end
   i += 1
 end
+toc()
 
 M
 
@@ -176,7 +201,7 @@ end
 
 #restituisce il gradiente della funzione obiettivo
 function grad(X::Matrix)
-  return 2 * T * X * T - 2 *Q
+  return 2 * T * X * T - 2 * Q
 end
 
 #=
@@ -192,6 +217,10 @@ function findElem (id, array, size)
   return -1
 end
 
+#=
+Controlla se l'utente "user" ha già dato un rating al programma "progra", nell'intervallo da 1 a size
+Ritorna il numero di riga in cui è stato trovato il rating, -1 altrimenti
+=#
 function findExistingRating (user, program, size)
   for i=1:size
     if ratingsTable[i,2] == user && ratingsTable[i,3] == program
