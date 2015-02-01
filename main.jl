@@ -125,7 +125,7 @@ genreTable = dataset
 genreTable = genreTable[:,[4,5,7]]
 
 #Inizializzo matrice A = (programmi,genere+sottogenere)
-idsSize = size(ids)[1]
+idsSize = length(ids)
 matrixA=ones( idsSize , 2 )
 
 genreTableSize = size(genreTable)[1]
@@ -160,8 +160,8 @@ end
 toc()
 
 #eseguo i calcoli per il gradiente che non devono essere rifatti ogni volta
-Q = transpose(C)*S*C
-T = transpose(C)*C
+Q = transpose(C) * S * C
+T = transpose(C) * C
 
 #tolleranza
 tol = 1e-6
@@ -170,7 +170,7 @@ tol = 1e-6
 miter = 1000
 
 #dimensione passo
-alpha = 0.0015
+alpha = 0.0017
 
 #inizializzo la matrice M
 M = Mnew = zeros(length(ids),length(ids))
