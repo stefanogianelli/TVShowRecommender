@@ -5,26 +5,9 @@ cd(dirname(@__FILE__))
 dir = "dataset"
 
 #carico la matrice con le informazioni sui programmi di training
-println("Carico la matrice con le informazioni dei programmi ...")
+println("Carico gli id dei programmi di training")
 tic()
-trainingInfo = readdlm(".\\$dir\\training.txt", '\t', use_mmap=true)
-toc()
-
-println("Salvo i programId ...")
-#considero solo le colonne programId e start
-trainingInfo = trainingInfo[:,[2,4]]
-
-#cerco e salvo i programId di 8 giorni consecutivi
-#lo script legge tutti i programmi presenti nel file, è necessario dunque filtrare gli eventi di interesse manualmente
-ids = Int64[]
-
-tic()
-for i=1:size(trainingInfo)[1]
-  #verifico se il programId corrente non sia già stato inserito
-  if !in(trainingInfo[i,1], ids)
-    push!(ids, trainingInfo[i,1])
-  end
-end
+ids = loadProgramIds(".\\$dir\\training.txt")
 toc()
 
 #carico il dataset
@@ -120,43 +103,9 @@ end
 toc()
 
 #calcolo la matrice C
-#considero solo le colonne: genreIdx, subGenreIdx, programIdx
-genreTable = dataset
-genreTable = genreTable[:,[4,5,7]]
-
-#Inizializzo matrice A = (programmi,genere+sottogenere)
-idsSize = length(ids)
-matrixA=ones( idsSize , 2 )
-
-genreTableSize = size(genreTable)[1]
-i = 1
-while i <= idsSize
-  j=1
-  while j < genreTableSize && genreTable[j,3] != ids[i]
-    j += 1
-  end
-  matrixA[i,1]=genreTable[j,1]
-  matrixA[i,2]=genreTable[j,2]
-  i += 1
-end
-
-println("Calcolo la matrice C ...")
+println("Calcolo la matrice C di training ...")
 tic()
-A_rows = size(matrixA)[1]
-C = zeros(A_rows,A_rows)
-for i = 1:(A_rows-1)
-  for l = i+1:(A_rows)
-    k=0.0
-     if matrixA[i,1]==matrixA[l,1]!=1
-      k=0.5
-      if matrixA[i,2]==matrixA[l,2]!=1
-       k=1.0
-      end
-     end
-    C[i,l]=k
-    C[l,i]=k
-  end
-end
+C = computeItemItemSim(dataset, ids)
 toc()
 
 #eseguo i calcoli per il gradiente che non devono essere rifatti ogni volta
@@ -192,7 +141,11 @@ while i <= miter && object(M) > tol
 end
 toc()
 
-M
+#carico la matrice con le informazioni sui programmi di testing
+println("Carico gli id dei programmi di testing")
+tic()
+idTesting = loadProgramIds(".\\$dir\\testing.txt")
+toc()
 
 #definisco la funzione obiettivo
 function object (X::Matrix)
@@ -274,4 +227,61 @@ function userAverage (n)
   else
     return tot / count
   end
+end
+
+function computeItemItemSim (genreTable::Matrix, ids::Vector)
+  #considero solo le colonne: genreIdx, subGenreIdx, programIdx
+  genreTable = genreTable[:,[4,5,7]]
+
+  #Inizializzo matrice A = (programmi,genere+sottogenere)
+  idsSize = length(ids)
+  matrixA=ones( idsSize , 2 )
+
+  genreTableSize = size(genreTable)[1]
+  i = 1
+  while i <= idsSize
+    j=1
+    while j < genreTableSize && genreTable[j,3] != ids[i]
+      j += 1
+    end
+    matrixA[i,1]=genreTable[j,1]
+    matrixA[i,2]=genreTable[j,2]
+    i += 1
+  end
+
+  A_rows = size(matrixA)[1]
+  C = zeros(A_rows,A_rows)
+  for i = 1:(A_rows-1)
+    for l = i+1:(A_rows)
+      k=0.0
+       if matrixA[i,1]==matrixA[l,1]!=1
+        k=0.5
+        if matrixA[i,2]==matrixA[l,2]!=1
+         k=1.0
+        end
+       end
+      C[i,l]=k
+      C[l,i]=k
+    end
+  end
+  return C
+end
+
+function loadProgramIds (filename::String)
+  programInfo = readdlm(filename, '\t', use_mmap=true)
+
+  #considero solo le colonne programId e start
+  programInfo = programInfo[:,[2,4]]
+
+  #cerco e salvo i programId
+  ids = Int64[]
+
+  for i=1:size(programInfo)[1]
+    #verifico se il programId corrente non sia già stato inserito
+    if !in(programInfo[i,1], ids)
+      push!(ids, programInfo[i,1])
+    end
+  end
+
+  return ids
 end
