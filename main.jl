@@ -22,11 +22,8 @@ tic()
 dataset = readdlm(".\\$dir\\data.txt", ',', use_mmap=true)
 toc()
 
-#creo una copia per la tabella dei ratings
-ratingsTable = dataset
-
 #considero solo le colonne: weekIdx, userIdx, programIdx, duration
-ratingsTable = ratingsTable[:,[3,6,7,9]]
+ratingsTable = dataset[:,[3,6,7,9]]
 
 #rimuovo i programIdx duplicati e sommo le loro durate
 #considero solo i programmi selezionati nel vettore ids
@@ -83,31 +80,13 @@ toc()
 #preparo la URM
 println("Costruisco la URM ...")
 tic()
-URM = zeros(size(users)[1], size(ids)[1])
-for i=1:size(ratingsTable)[1]
-  #cerco la riga corrispondente all'utente corrente
-  row = findElem(ratingsTable[i,1], users, length(users))
-  #cerco la colonna corrispondente al programma corrente
-  col = findElem(ratingsTable[i,2], ids, length(ids))
-  #inserisco la durata nella posizione (row,col)
-  URM[row,col] = ratingsTable[i,3]
-end
+URM = buildURM()
 toc()
 
 #calcolo la matrice S tramite adjusted cosine similarity
 println("Calcolo la matrice S ...")
 tic()
-S = zeros(length(ids) + length(idTesting), length(ids) + length(idTesting))
-for i=1:size(URM)[2]
-  for j=i:size(URM)[2]
-    if (i == j)
-      S[i,j] = 1
-    else
-      #sfrutto la simmetria della matrice S per il calcolo della similarità
-      S[i,j] = S[j,i] = cosineSimilarity(URM[:,i], URM[:,j])
-    end
-  end
-end
+S = buildS()
 toc()
 
 #calcolo la matrice C
@@ -115,7 +94,6 @@ println("Calcolo la matrice C")
 tic()
 C = computeItemItemSim(dataset, [ids,idTesting])
 toc()
-
 
 #eseguo i calcoli per il gradiente che non devono essere rifatti ogni volta
 Q = transpose(C) * S * C
@@ -130,24 +108,10 @@ miter = 1000
 #dimensione passo
 alpha = 0.00017
 
-#inizializzo la matrice M
-M = Mnew = zeros(length(ids) + length(idTesting),length(ids) + length(idTesting))
-fval = object(M)
-
-#calcolo la matrice M ottimale
-println("Calcolo la matrice M ...")
+#calcolo la matrice M
+println("Calcolo la matrice M ottimale ...")
 tic()
-i = 1
-while i <= miter && object(M) > tol
-  index = rand(1:size(M)[2])
-  Mnew[index,:] = M[index,:] - alpha * grad(M)[index,:]
-  if (object(Mnew) < fval)
-    #@printf "-----------------------\niter = %d\nF = %f\n" i object(Mnew)
-    M = Mnew
-    fval = object(M)
-  end
-  i += 1
-end
+M = gradientDescent()
 toc()
 
 #costruisco la matrice con i ratings per i programmi futuri
@@ -155,60 +119,63 @@ R = zeros(length(users), length(idTesting))
 
 N = 5
 
-for i=1:size(R)[1]
-  for j=1:size(R)[2]
-    p = getTau(i,j,N)
-    num = den = 0
-    for k=1:length(p)
-      pIndex = findElem(p[k], ids, length(ids))
-      s = computeSimilarity(pIndex,j)
-      num += URM[i, pIndex] * s
-      den += s
-    end
-    if (den != 0)
-      R[i,j] = num / den
-    else
-      R[i,j] = 0
-    end
-  end
-end
+println("Calcolo la matrice R dei ratings per i programmi futuri ...")
+tic()
+R = buildR()
+toc()
+
+println("Fine.")
 
 R
 
-#definisco la funzione obiettivo
-function object (X::Matrix)
-  return vecnorm(S - C * X * transpose(C));
-end
-
-#restituisce il gradiente della funzione obiettivo
-function grad(X::Matrix)
-  return 2 * T * X * T - 2 * Q
-end
-
 #=
-Controlla se l'id esiste già nel vettore "array", nell'intervallo da 1 a size
-Ritorna il numero di riga in cui è stato trovato l'id, -1 altrimenti
+FUNZIONI
 =#
-function findElem (id, array, size)
-  for i = 1:size
-    if array[i] == id
-      return i
+
+#Carica i programId univoci dal file specificato. Usa come delimitatore la tabulazione
+function loadProgramIds (filename::String)
+  programInfo = readdlm(filename, '\t', use_mmap=true)
+  #considero solo le colonne programId e start
+  programInfo = programInfo[:,[2,4]]
+  #cerco e salvo i programId
+  ids = Int64[]
+  for i=1:size(programInfo)[1]
+    #verifico se il programId corrente non sia già stato inserito
+    if !in(programInfo[i,1], ids)
+      push!(ids, programInfo[i,1])
     end
   end
-  return -1
+  return ids
 end
 
-#=
-Controlla se l'utente "user" ha già dato un rating al programma "progra", nell'intervallo da 1 a size
-Ritorna il numero di riga in cui è stato trovato il rating, -1 altrimenti
-=#
-function findExistingRating (user, program, size)
-  for i=1:size
-    if ratingsTable[i,2] == user && ratingsTable[i,3] == program
-      return i
+#Costruisce la User-Ratings Matrix
+function buildURM ()
+  URM = zeros(size(users)[1], size(ids)[1])
+  for i=1:size(ratingsTable)[1]
+    #cerco la riga corrispondente all'utente corrente
+    row = findElem(ratingsTable[i,1], users, length(users))
+    #cerco la colonna corrispondente al programma corrente
+    col = findElem(ratingsTable[i,2], ids, length(ids))
+    #inserisco la durata nella posizione (row,col)
+    URM[row,col] = ratingsTable[i,3]
+  end
+  return URM
+end
+
+#Calcola la matrice di similarità tra item S
+function buildS ()
+  S = zeros(length(ids) + length(idTesting), length(ids) + length(idTesting))
+  for i=1:size(URM)[2]
+    for j=i:size(URM)[2]
+      if (i == j)
+        S[i,j] = 1
+      else
+        #sfrutto la simmetria della matrice S per il calcolo della similarità
+        S[i,j] = S[j,i] = cosineSimilarity(URM[:,i], URM[:,j])
+      end
     end
   end
-  return -1
+  return S
 end
 
 #calcola la cosine similarity tra due vettori
@@ -295,30 +262,56 @@ function computeItemItemSim (genreTable::Matrix, ids::Vector)
   return C
 end
 
-#Carica i programId univoci dal file specificato. Usa come delimitatore la tabulazione
-function loadProgramIds (filename::String)
-  programInfo = readdlm(filename, '\t', use_mmap=true)
+function gradientDescent ()
+  #inizializzo la matrice M
+  M = Mnew = zeros(length(ids) + length(idTesting),length(ids) + length(idTesting))
+  fval = object(M)
 
-  #considero solo le colonne programId e start
-  programInfo = programInfo[:,[2,4]]
-
-  #cerco e salvo i programId
-  ids = Int64[]
-
-  for i=1:size(programInfo)[1]
-    #verifico se il programId corrente non sia già stato inserito
-    if !in(programInfo[i,1], ids)
-      push!(ids, programInfo[i,1])
+  #calcolo la matrice M ottimale
+  i = 1
+  while i <= miter && object(M) > tol
+    index = rand(1:size(M)[2])
+    Mnew[index,:] = M[index,:] - alpha * grad(M)[index,:]
+    if (object(Mnew) < fval)
+      #@printf "-----------------------\niter = %d\nF = %f\n" i object(Mnew)
+      M = Mnew
+      fval = object(M)
     end
+    i += 1
   end
-
-  return ids
+  return M
 end
 
-#Calcola la similarità tra uno spettacolo passato ed uno futuro
-function computeSimilarity (p, f)
-  fIndex = length(ids) + f
-  return (C[p,:] * M * transpose(C[fIndex,:]))[1]
+#definisco la funzione obiettivo
+function object (X::Matrix)
+  return vecnorm(S - C * X * transpose(C));
+end
+
+#restituisce il gradiente della funzione obiettivo
+function grad(X::Matrix)
+  return 2 * T * X * T - 2 * Q
+end
+
+#Costruisce la matrice R
+function buildR ()
+  for i=1:size(R)[1]
+    for j=1:size(R)[2]
+      p = getTau(i,j,N)
+      num = den = 0
+      for k=1:length(p)
+        pIndex = findElem(p[k], ids, length(ids))
+        s = computeSimilarity(pIndex,j)
+        num += URM[i, pIndex] * s
+        den += s
+      end
+      if (den != 0)
+        R[i,j] = num / den
+      else
+        R[i,j] = 0
+      end
+    end
+  end
+  return R
 end
 
 #Restituisce linsieme tau dei programmi trasmessi simili a quello futuro preso in considerazine per un utente
@@ -337,4 +330,36 @@ function getTau (u, f, N)
     common = common[1:N]
   end
   return common
+end
+
+#Calcola la similarità tra uno spettacolo passato ed uno futuro
+function computeSimilarity (p, f)
+  fIndex = length(ids) + f
+  return (C[p,:] * M * transpose(C[fIndex,:]))[1]
+end
+
+#=
+Controlla se l'id esiste già nel vettore "array", nell'intervallo da 1 a size
+Ritorna il numero di riga in cui è stato trovato l'id, -1 altrimenti
+=#
+function findElem (id, array, size)
+  for i = 1:size
+    if array[i] == id
+      return i
+    end
+  end
+  return -1
+end
+
+#=
+Controlla se l'utente "user" ha già dato un rating al programma "progra", nell'intervallo da 1 a size
+Ritorna il numero di riga in cui è stato trovato il rating, -1 altrimenti
+=#
+function findExistingRating (user, program, size)
+  for i=1:size
+    if ratingsTable[i,2] == user && ratingsTable[i,3] == program
+      return i
+    end
+  end
+  return -1
 end
