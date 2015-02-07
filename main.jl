@@ -151,7 +151,29 @@ end
 toc()
 
 #costruisco la matrice con i ratings per i programmi futuri
-R = zeros(length(idTesting), length(idTesting))
+R = zeros(length(users), length(idTesting))
+
+N = 5
+
+for i=1:size(R)[1]
+  for j=1:size(R)[2]
+    p = getTau(i,j,N)
+    num = den = 0
+    for k=1:length(p)
+      pIndex = findElem(p[k], ids, length(ids))
+      s = computeSimilarity(p,j)
+      num += URM[u, pIndex] * s
+      den += s
+    end
+    if (den > 0)
+      R[i,j] = num / den
+    else
+      R[i,j] = 0
+    end
+  end
+end
+
+R
 
 #definisco la funzione obiettivo
 function object (X::Matrix)
@@ -294,8 +316,21 @@ function loadProgramIds (filename::String)
 end
 
 #Calcola la similarità tra uno spettacolo passato ed uno futuro
-function computeSimilarity (p::String, f::String)
+function computeSimilarity (p, f)
   pIndex = findElem(p, ids, length(ids))
-  fIndex = findElem(f, idTesting, length(idTesting))
+  fIndex = length(ids) + findElem(f, idTesting, length(idTesting))
   return C[pIndex,:] * M * transpose(C[fIndex,:])
+end
+
+#Restituisce linsieme tau dei programmi trasmessi simili a quello futuro preso in considerazine per un utente
+function getTau (u, f, N)
+  fIndex = length(ids) + findElem(f, idTesting, length(idTesting))
+  set = C[fIndex,:]
+  userRated = URM[u,:]
+  common = intersect(set, userRated)
+  if (length(common) > N)
+    sort!(common, rev=true)
+    common = common[1:N]
+  end
+  return common
 end
