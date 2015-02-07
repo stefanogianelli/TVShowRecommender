@@ -1,25 +1,47 @@
-#ricavo il percorso base da cui caricare i dataset
-cd(dirname(@__FILE__))
+#=
+PARAMETRI
+=#
 
 #permette di scegliere se usare la cartella di test o quella con i dati completi
-dir = "dataset"
+dir = ".\\dataset"
+#percorso dati di training
+trainingPath = "$dir\\training.txt"
+#percorso dati di testing
+testingPath = "$dir\\testing.txt"
+#percorso dataset
+datasetPath = "$dir\\data.txt"
+#tolleranza (SGD)
+tol = 1e-6
+#numero massimo iterazioni (SGD)
+miter = 1000
+#dimensione passo (SGD)
+alpha = 0.00017
+#numero item simili (calcolo R)
+N = 5
+
+#=
+MAIN
+=#
+
+#ricavo il percorso base da cui caricare i dataset
+cd(dirname(@__FILE__))
 
 #carico la matrice con le informazioni sui programmi di training
 println("Carico gli id dei programmi di training")
 tic()
-ids = loadProgramIds(".\\$dir\\training.txt")
+ids = loadProgramIds(trainingPath)
 toc()
 
 #carico la matrice con le informazioni sui programmi di testing
 println("Carico gli id dei programmi di testing")
 tic()
-idTesting = loadProgramIds(".\\$dir\\testing.txt")
+idTesting = loadProgramIds(testingPath)
 toc()
 
 #carico il dataset
 println("Carico il dataset ...")
 tic()
-dataset = readdlm(".\\$dir\\data.txt", ',', use_mmap=true)
+dataset = readdlm(datasetPath, ',', use_mmap=true)
 toc()
 
 #considero solo le colonne: weekIdx, userIdx, programIdx, duration
@@ -99,15 +121,6 @@ toc()
 Q = transpose(C) * S * C
 T = transpose(C) * C
 
-#tolleranza
-tol = 1e-6
-
-#numero massimo iterazioni
-miter = 1000
-
-#dimensione passo
-alpha = 0.00017
-
 #calcolo la matrice M
 println("Calcolo la matrice M ottimale ...")
 tic()
@@ -116,8 +129,6 @@ toc()
 
 #costruisco la matrice con i ratings per i programmi futuri
 R = zeros(length(users), length(idTesting))
-
-N = 5
 
 println("Calcolo la matrice R dei ratings per i programmi futuri ...")
 tic()
