@@ -95,14 +95,12 @@ S = ones(length(ids), length(ids))
 for i=1:size(URM)[2]
   for j=i+1:size(URM)[2]
     #sfrutto la simmetria della matrice S per il calcolo della similarità
-    res = cosineSimilarity(URM[:,i], URM[:,j])
-    S[i,j] = res
-    S[j,i] = res
+    S[i,j] = S[j,i] = cosineSimilarity(URM[:,i], URM[:,j])
   end
 end
 toc()
 
-#calcolo la matrice C
+#calcolo la matrice C per i programmi di training
 println("Calcolo la matrice C di training ...")
 tic()
 C = computeItemItemSim(dataset, ids)
@@ -133,7 +131,7 @@ while i <= miter && object(M) > tol
   index = rand(1:size(M)[2])
   Mnew[index,:] = M[index,:] - alpha * grad(M)[index,:]
   if (object(Mnew) < fval)
-    @printf "-----------------------\niter = %d\nF = %f\n" i object(Mnew)
+    #@printf "-----------------------\niter = %d\nF = %f\n" i object(Mnew)
     M = Mnew
     fval = object(M)
   end
@@ -146,6 +144,15 @@ println("Carico gli id dei programmi di testing")
 tic()
 idTesting = loadProgramIds(".\\$dir\\testing.txt")
 toc()
+
+#calcolo la matrice C per i programmi di testing
+println("Calcolo la matrice C di testing ...")
+tic()
+CT = computeItemItemSim(dataset, idTesting)
+toc()
+
+#costruisco la matrice con i ratings per i programmi futuri
+R = zeros(length(idTesting), length(idTesting))
 
 #definisco la funzione obiettivo
 function object (X::Matrix)
@@ -229,6 +236,7 @@ function userAverage (n)
   end
 end
 
+#Restituisce la matrice di similarità rispetto ai contenuti di un certo set di programId
 function computeItemItemSim (genreTable::Matrix, ids::Vector)
   #considero solo le colonne: genreIdx, subGenreIdx, programIdx
   genreTable = genreTable[:,[4,5,7]]
@@ -260,13 +268,13 @@ function computeItemItemSim (genreTable::Matrix, ids::Vector)
          k=1.0
         end
        end
-      C[i,l]=k
-      C[l,i]=k
+      C[i,l ]= C[l,i] = k
     end
   end
   return C
 end
 
+#Carica i programId univoci dal file specificato. Usa come delimitatore la tabulazione
 function loadProgramIds (filename::String)
   programInfo = readdlm(filename, '\t', use_mmap=true)
 
