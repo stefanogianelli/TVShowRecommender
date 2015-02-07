@@ -10,6 +10,12 @@ tic()
 ids = loadProgramIds(".\\$dir\\training.txt")
 toc()
 
+#carico la matrice con le informazioni sui programmi di testing
+println("Carico gli id dei programmi di testing")
+tic()
+idTesting = loadProgramIds(".\\$dir\\testing.txt")
+toc()
+
 #carico il dataset
 println("Carico il dataset ...")
 tic()
@@ -91,20 +97,25 @@ toc()
 #calcolo la matrice S tramite adjusted cosine similarity
 println("Calcolo la matrice S ...")
 tic()
-S = ones(length(ids), length(ids))
+S = zeros(length(ids) + length(idTesting), length(ids) + length(idTesting))
 for i=1:size(URM)[2]
-  for j=i+1:size(URM)[2]
-    #sfrutto la simmetria della matrice S per il calcolo della similarità
-    S[i,j] = S[j,i] = cosineSimilarity(URM[:,i], URM[:,j])
+  for j=i:size(URM)[2]
+    if (i == j)
+      S[i,j] = 1
+    else
+      #sfrutto la simmetria della matrice S per il calcolo della similarità
+      S[i,j] = S[j,i] = cosineSimilarity(URM[:,i], URM[:,j])
+    end
   end
 end
 toc()
 
-#calcolo la matrice C per i programmi di training
-println("Calcolo la matrice C di training ...")
+#calcolo la matrice C
+println("Calcolo la matrice C")
 tic()
-C = computeItemItemSim(dataset, ids)
+C = computeItemItemSim(dataset, [ids,idTesting])
 toc()
+
 
 #eseguo i calcoli per il gradiente che non devono essere rifatti ogni volta
 Q = transpose(C) * S * C
@@ -117,10 +128,10 @@ tol = 1e-6
 miter = 1000
 
 #dimensione passo
-alpha = 0.0017
+alpha = 0.00017
 
 #inizializzo la matrice M
-M = Mnew = zeros(length(ids),length(ids))
+M = Mnew = zeros(length(ids) + length(idTesting),length(ids) + length(idTesting))
 fval = object(M)
 
 #calcolo la matrice M ottimale
@@ -137,18 +148,6 @@ while i <= miter && object(M) > tol
   end
   i += 1
 end
-toc()
-
-#carico la matrice con le informazioni sui programmi di testing
-println("Carico gli id dei programmi di testing")
-tic()
-idTesting = loadProgramIds(".\\$dir\\testing.txt")
-toc()
-
-#calcolo la matrice C per i programmi di testing
-println("Calcolo la matrice C di testing ...")
-tic()
-CT = computeItemItemSim(dataset, idTesting)
 toc()
 
 #costruisco la matrice con i ratings per i programmi futuri
@@ -292,4 +291,11 @@ function loadProgramIds (filename::String)
   end
 
   return ids
+end
+
+#Calcola la similarità tra uno spettacolo passato ed uno futuro
+function computeSimilarity (p::String, f::String)
+  pIndex = findElem(p, ids, length(ids))
+  fIndex = findElem(f, idTesting, length(idTesting))
+  return C[pIndex,:] * M * transpose(C[fIndex,:])
 end
