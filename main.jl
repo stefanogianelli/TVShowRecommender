@@ -161,11 +161,11 @@ for i=1:size(R)[1]
     num = den = 0
     for k=1:length(p)
       pIndex = findElem(p[k], ids, length(ids))
-      s = computeSimilarity(p,j)
-      num += URM[u, pIndex] * s
+      s = computeSimilarity(pIndex,j)
+      num += URM[i, pIndex] * s
       den += s
     end
-    if (den > 0)
+    if (den != 0)
       R[i,j] = num / den
     else
       R[i,j] = 0
@@ -317,17 +317,21 @@ end
 
 #Calcola la similarità tra uno spettacolo passato ed uno futuro
 function computeSimilarity (p, f)
-  pIndex = findElem(p, ids, length(ids))
-  fIndex = length(ids) + findElem(f, idTesting, length(idTesting))
-  return C[pIndex,:] * M * transpose(C[fIndex,:])
+  fIndex = length(ids) + f
+  return (C[p,:] * M * transpose(C[fIndex,:]))[1]
 end
 
 #Restituisce linsieme tau dei programmi trasmessi simili a quello futuro preso in considerazine per un utente
 function getTau (u, f, N)
-  fIndex = length(ids) + findElem(f, idTesting, length(idTesting))
+  fIndex = length(ids) + f
   set = C[fIndex,:]
   userRated = URM[u,:]
-  common = intersect(set, userRated)
+  common = Int64[]
+  for i=1:length(userRated)
+    if (set[i] != 0 && userRated[i] != 0)
+      push!(common, ids[i])
+    end
+  end
   if (length(common) > N)
     sort!(common, rev=true)
     common = common[1:N]
