@@ -130,8 +130,6 @@ M = gradientDescent()
 toc()
 
 #costruisco la matrice con i ratings per i programmi futuri
-R = zeros(length(users), length(idTesting))
-
 println("Calcolo la matrice R dei ratings per i programmi futuri ...")
 tic()
 R = buildR()
@@ -311,6 +309,7 @@ end
 
 #Costruisce la matrice R
 function buildR ()
+  R = zeros(length(users), length(idTesting))
   for i=1:size(R)[1]
     for j=1:size(R)[2]
       p = getTau(i,j,N)
