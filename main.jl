@@ -2,7 +2,7 @@
 PARAMETRI
 =#
 
-#permette di scegliere se usare la cartella di test o quella con i dati completi
+#permette di scegliere la cartella
 dir = ".\\dataset"
 #percorso dati di training
 trainingPath = "$dir\\training.txt"
@@ -15,7 +15,9 @@ tol = 1e-6
 #numero massimo iterazioni (SGD)
 miter = 1000
 #dimensione passo (SGD)
-alpha = 0.00017
+alpha = 0.0001
+#incremento percentuale del learning rate (SGD)
+deltaAlpha = 5
 #numero item simili (calcolo R)
 N = 5
 
@@ -273,29 +275,33 @@ function computeItemItemSim (genreTable::Matrix, ids::Vector)
   return C
 end
 
+#Calcola la matrice M ottimale attraverso SGD
 function gradientDescent ()
+  a = alpha
   #inizializzo la matrice M
   M = Mnew = zeros(length(ids) + length(idTesting),length(ids) + length(idTesting))
   fval = object(M)
-
+  @printf "Start value: %f\nStart alpha: %f\n" fval a
   #calcolo la matrice M ottimale
   i = 1
   while i <= miter && object(M) > tol
-    index = rand(1:size(M)[2])
-    Mnew[index,:] = M[index,:] - alpha * grad(M)[index,:]
+    Mnew = M - (a / size(M)[1]) * grad(M)
     if (object(Mnew) < fval)
-      #@printf "-----------------------\niter = %d\nF = %f\n" i object(Mnew)
       M = Mnew
       fval = object(M)
+      a += (a * deltaAlpha / 100)
+    else
+      a /= 2
     end
     i += 1
   end
+  @printf "End value: %f\nEnd alpha: %f\n" object(M) a
   return M
 end
 
 #definisco la funzione obiettivo
 function object (X::Matrix)
-  return vecnorm(S - C * X * transpose(C));
+  return vecnorm(S - C * X * transpose(C))
 end
 
 #restituisce il gradiente della funzione obiettivo
