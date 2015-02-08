@@ -286,7 +286,7 @@ function gradientDescent ()
   i = 1
   while i <= miter && object(M) > tol
     Mnew = M - (a / size(M)[1]) * grad(M)
-    if (object(Mnew) < fval)
+    if (object(Mnew) <= fval)
       M = Mnew
       fval = object(M)
       a += (a * deltaAlpha / 100)
