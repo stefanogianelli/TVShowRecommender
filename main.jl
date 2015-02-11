@@ -190,7 +190,7 @@ function buildS ()
 end
 
 #calcola la cosine similarity tra due vettori
-function cosineSimilarity (a, b)
+function cosineSimilarity (a::Vector, b::Vector)
   dim = length(a)
   #calcolo il numeratore
   num = 0
@@ -219,7 +219,7 @@ function cosineSimilarity (a, b)
 end
 
 #calcola la media dei ratings dati dall'utente n
-function userAverage (n)
+function userAverage (n::Int)
   tot = 0
   count = 0
   for j=1:size(URM)[2]
@@ -331,7 +331,7 @@ function buildR ()
 end
 
 #Restituisce linsieme tau dei programmi trasmessi simili a quello futuro preso in considerazine per un utente
-function getTau (u, f, N)
+function getTau (u::Int, f::Int, N::Int)
   fIndex = length(ids) + f
   set = C[fIndex,:]
   userRated = URM[u,:]
@@ -349,7 +349,7 @@ function getTau (u, f, N)
 end
 
 #Calcola la similarità tra uno spettacolo passato ed uno futuro
-function computeSimilarity (p, f)
+function computeSimilarity (p::Int, f::Int)
   fIndex = length(ids) + f
   return (C[p,:] * M * transpose(C[fIndex,:]))[1]
 end
@@ -358,7 +358,7 @@ end
 Controlla se l'id esiste già nel vettore "array", nell'intervallo da 1 a size
 Ritorna il numero di riga in cui è stato trovato l'id, -1 altrimenti
 =#
-function findElem (id, array, size)
+function findElem (id::Int, array::Vector, size::Int)
   for i = 1:size
     if array[i] == id
       return i
@@ -371,7 +371,7 @@ end
 Controlla se l'utente "user" ha già dato un rating al programma "progra", nell'intervallo da 1 a size
 Ritorna il numero di riga in cui è stato trovato il rating, -1 altrimenti
 =#
-function findExistingRating (user, program, size)
+function findExistingRating (user::Int, program::Int, size::Int)
   for i=1:size
     if ratingsTable[i,2] == user && ratingsTable[i,3] == program
       return i
