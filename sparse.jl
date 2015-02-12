@@ -54,17 +54,6 @@ toc()
 
 URM = sparse(dataset[:,6], dataset[:,7], dataset[:,9])
 
-rows = rowvals(URM)
-vals = nonzeros(URM)
-m, n = size(URM)
-for i = 1:n
-  for j in nzrange(URM, i)
-    row = rows[j]
-    val = vals[j]
-    println("($row, $i) = $val")
-  end
-end
-
 #calcolo la matrice S tramite adjusted cosine similarity
 println("Calcolo la matrice S ...")
 tic()
