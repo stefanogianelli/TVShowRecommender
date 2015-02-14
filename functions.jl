@@ -24,7 +24,7 @@ function buildS ()
 end
 
 #calcola la cosine similarity tra due vettori
-function cosineSimilarity (a, b)
+function cosineSimilarity (a::SparseMatrixCSC, b::SparseMatrixCSC)
   indexes = intersect(rowvals(a), rowvals(b))
   #calcolo il numeratore
   num = 0
@@ -82,7 +82,7 @@ function computeItemItemSim (genreTable::Matrix, ids::Vector)
   end
 
   A_rows = size(matrixA)[1]
-  C = zeros(A_rows,A_rows)
+  C = spzeros(A_rows,A_rows)
   for i = 1:(A_rows-1)
     for l = i+1:(A_rows)
       k=0.0
@@ -102,7 +102,7 @@ end
 function gradientDescent ()
   a = alpha
   #inizializzo la matrice M
-  M = Mnew = zeros(length(ids) + length(idTesting),length(ids) + length(idTesting))
+  M = Mnew = spzeros(length(ids) + length(idTesting), length(ids) + length(idTesting))
   fval = object(M)
   @printf "Start value: %f\nStart alpha: %f\n" fval a
   #calcolo la matrice M ottimale
@@ -123,12 +123,12 @@ function gradientDescent ()
 end
 
 #definisco la funzione obiettivo
-function object (X::Matrix)
+function object (X::SparseMatrixCSC)
   return (vecnorm(S - C * X * transpose(C)))^2
 end
 
 #restituisce il gradiente della funzione obiettivo
-function grad(X::Matrix)
+function grad(X::SparseMatrixCSC)
   return 2 * T * X * T - 2 * Q
 end
 
