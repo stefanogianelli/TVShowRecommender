@@ -60,6 +60,24 @@ function userAverage (n::Int)
   end
 end
 
+#=function calcC ()
+  C = spzeros(length(programs))
+  for i = 1:length(ids)
+    id1 = programs[ids[i]]
+    for j = i:length(ids)
+      id2 = programs[ids[j]]
+      if (genres[ids[i]][1] == genres[ids[j]][1])
+        if (genres[ids[i]][2] == genres[ids[j]][2])
+          C[id1,id2] = C[id2,id1] = 1
+        else
+          C[id1,id2] = C[id2,id1] = 0.5
+        end
+      end
+    end
+  end
+  return C
+end=#
+
 #Restituisce la matrice di similarità rispetto ai contenuti di un certo set di programId
 function computeItemItemSim (genreTable::Matrix, ids::Vector)
   #considero solo le colonne: genreIdx, subGenreIdx, programIdx
@@ -138,12 +156,17 @@ function getRecommendation (user::Int)
   userIndex = users[user]
   for prog in idTesting
     progIndex = programs[prog]
-    p = getTau(userIndex, progIndex, N)
+    p = getTau(userIndex, progIndex)
+    println("p size = $(length(p))")
     num = den = 0
     for k in p
-      pIndex = programs[k]
+      #=pIndex = programs[k]
       s = computeSimilarity(pIndex,progIndex)
-      num += URM[userIndex, pIndex] * s
+      println("rating = $(URM[userIndex, pIndex]) / s = $s")
+      num += URM[userIndex, pIndex] * s=#
+      s = computeSimilarity(k,progIndex)
+      println("rating = $(URM[userIndex, k]) / s = $s")
+      num += URM[userIndex, k] * s
       den += s
     end
     if (den != 0)
@@ -157,18 +180,14 @@ function getRecommendation (user::Int)
 end
 
 #Restituisce linsieme tau dei programmi trasmessi simili a quello futuro preso in considerazine per un utente
-function getTau (u::Int, f::Int, N::Int)
+function getTau (u::Int, f::Int)
   common = Int64[]
   set = C[f,:]
   userRated = URM[u,:]
   for i=1:length(userRated)
     if (set[i] != 0 && userRated[i] != 0)
-      push!(common, ids[i])
+      push!(common, i)
     end
-  end
-  if (length(common) > N)
-    sort!(common, rev=true)
-    common = common[1:N]
   end
   return common
 end

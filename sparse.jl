@@ -50,17 +50,18 @@ tic()
 dataset = int(readdlm(datasetPath, ',', use_mmap=true))
 toc()
 
-#filtro il dataset
-println("Filtro il dataset ...")
+#pulisco il dataset
+println("Pulisco il dataset ...")
 tic()
 ratings = Dict()
 programs = Dict()
+#genres = Dict()
 countProg = 1
 users = Dict()
 countUser = 1
 for i = 1:size(dataset)[1]
   if (dataset[i,3] != 14 && dataset[i,3] != 19)
-    if (in(dataset[i,7], ids) || in(dataset[i,7], idTesting))
+    if (in(dataset[i,7], ids))
       try
         ratings[dataset[i,6], dataset[i,7]] += dataset[i,9]
       catch
@@ -75,7 +76,13 @@ for i = 1:size(dataset)[1]
         countProg += 1
       end
     end
+    #genres[dataset[i,7]] = (dataset[i,4], dataset[i,5])
   end
+end
+#aggiungo gli id dei programmi di test
+for id in idTesting
+  programs[id] = countProg
+  countProg += 1
 end
 if (length(programs) != length(ids) + length(idTesting))
   println("ATTENZIONE: nel dataset non sono stati trovati tutti gli id dei programmi!")
@@ -85,7 +92,7 @@ toc()
 #costruisco la URM
 println("Costruisco la URM ...")
 tic()
-URM = spzeros(length(users), length(programs))
+URM = spzeros(length(users), length(ids))
 for r in ratings
   URM[users[r[1][1]], programs[r[1][2]]] = r[2]
 end
@@ -113,6 +120,6 @@ tic()
 M = gradientDescent()
 toc()
 
-rec1 = getRecommendation(3513)
+rec1 = getRecommendation(2203)
 
 println("Fine.")
