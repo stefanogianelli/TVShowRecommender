@@ -114,7 +114,7 @@ function gradientDescent ()
       fval = object(M)
       a += (a * deltaAlpha / 100)
     else
-      a -= (a / 10)
+      a /= 2
     end
     i += 1
   end
