@@ -120,6 +120,10 @@ tic()
 M = gradientDescent()
 toc()
 
-rec1 = getRecommendation(2203)
+#cerco le raccomandazioni per tutti gli utenti
+for u in keys(users)
+  rec = getRecommendation(u)
+  println("$u : $rec")
+end
 
 println("Fine.")

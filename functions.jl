@@ -120,7 +120,8 @@ end
 function gradientDescent ()
   a = alpha
   #inizializzo la matrice M
-  M = Mnew = spzeros(length(ids) + length(idTesting), length(ids) + length(idTesting))
+  MSize= length(ids) + length(idTesting)
+  M = Mnew = spzeros(MSize, MSize)
   fval = object(M)
   @printf "Start value: %f\nStart alpha: %f\n" fval a
   #calcolo la matrice M ottimale
@@ -142,12 +143,12 @@ end
 
 #definisco la funzione obiettivo
 function object (X::SparseMatrixCSC)
-  return (vecnorm(S - C * X * transpose(C)))^2
+  (vecnorm(S - C * X * transpose(C)))^2
 end
 
 #restituisce il gradiente della funzione obiettivo
 function grad(X::SparseMatrixCSC)
-  return 2 * T * X * T - 2 * Q
+  2 * T * X * T - 2 * Q
 end
 
 #Restituisce gli spettacoli consigliati all utente "user"
@@ -157,15 +158,9 @@ function getRecommendation (user::Int)
   for prog in idTesting
     progIndex = programs[prog]
     p = getTau(userIndex, progIndex)
-    println("p size = $(length(p))")
     num = den = 0
     for k in p
-      #=pIndex = programs[k]
-      s = computeSimilarity(pIndex,progIndex)
-      println("rating = $(URM[userIndex, pIndex]) / s = $s")
-      num += URM[userIndex, pIndex] * s=#
       s = computeSimilarity(k,progIndex)
-      println("rating = $(URM[userIndex, k]) / s = $s")
       num += URM[userIndex, k] * s
       den += s
     end
