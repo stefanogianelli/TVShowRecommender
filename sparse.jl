@@ -17,7 +17,7 @@ tol = 1e-6
 #numero massimo iterazioni (SGD)
 miter = 1000
 #dimensione passo (SGD)
-alpha = 0.0001
+alpha = 0.001
 #incremento percentuale del learning rate (SGD)
 deltaAlpha = 5
 #numero item simili (calcolo R)
