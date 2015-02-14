@@ -54,6 +54,7 @@ toc()
 println("Pulisco il dataset ...")
 tic()
 ratings = Dict()
+check = Dict()
 programs = Dict()
 #genres = Dict()
 countProg = 1
@@ -74,6 +75,12 @@ for i = 1:size(dataset)[1]
       if (!in(dataset[i,7], keys(programs)))
         programs[dataset[i,7]] = countProg
         countProg += 1
+      end
+    elseif (in(dataset[i,7], idTesting))
+      try
+        check[dataset[i,6], dataset[i,7]] += dataset[i,9]
+      catch
+        check[dataset[i,6], dataset[i,7]] = dataset[i,9]
       end
     end
     #genres[dataset[i,7]] = (dataset[i,4], dataset[i,5])
