@@ -132,35 +132,35 @@ function grad(X::SparseMatrixCSC)
   return 2 * T * X * T - 2 * Q
 end
 
-#Costruisce la matrice R
-function buildR ()
-  R = zeros(length(users), length(idTesting))
-  for i=1:size(R)[1]
-    for j=1:size(R)[2]
-      p = getTau(i,j,N)
-      num = den = 0
-      for k=1:length(p)
-        pIndex = findElem(p[k], ids, length(ids))
-        s = computeSimilarity(pIndex,j)
-        num += URM[i, pIndex] * s
-        den += s
-      end
-      if (den != 0)
-        R[i,j] = num / den
-      else
-        R[i,j] = 0
-      end
+#Restituisce gli spettacoli consigliati all utente "user"
+function getRecommendation (user::Int)
+  ratings = Dict()
+  userIndex = users[user]
+  for prog in idTesting
+    progIndex = programs[prog]
+    p = getTau(userIndex, progIndex, N)
+    num = den = 0
+    for k in p
+      pIndex = programs[k]
+      s = computeSimilarity(pIndex,progIndex)
+      num += URM[userIndex, pIndex] * s
+      den += s
     end
+    if (den != 0)
+      res = num / den
+    else
+      res = 0
+    end
+    ratings[prog] = res
   end
-  return R
+  return ratings
 end
 
 #Restituisce linsieme tau dei programmi trasmessi simili a quello futuro preso in considerazine per un utente
 function getTau (u::Int, f::Int, N::Int)
-  fIndex = length(ids) + f
-  set = C[fIndex,:]
-  userRated = URM[u,:]
   common = Int64[]
+  set = C[f,:]
+  userRated = URM[u,:]
   for i=1:length(userRated)
     if (set[i] != 0 && userRated[i] != 0)
       push!(common, ids[i])
@@ -175,32 +175,5 @@ end
 
 #Calcola la similarità tra uno spettacolo passato ed uno futuro
 function computeSimilarity (p::Int, f::Int)
-  fIndex = length(ids) + f
-  return (C[p,:] * M * transpose(C[fIndex,:]))[1]
-end
-
-#=
-Controlla se l'id esiste già nel vettore "array", nell'intervallo da 1 a size
-Ritorna il numero di riga in cui è stato trovato l'id, -1 altrimenti
-=#
-function findElem (id::Int, array::Vector, size::Int)
-  for i = 1:size
-    if array[i] == id
-      return i
-    end
-  end
-  return -1
-end
-
-#=
-Controlla se l'utente "user" ha già dato un rating al programma "progra", nell'intervallo da 1 a size
-Ritorna il numero di riga in cui è stato trovato il rating, -1 altrimenti
-=#
-function findExistingRating (user::Int, program::Int, size::Int)
-  for i=1:size
-    if ratingsTable[i,2] == user && ratingsTable[i,3] == program
-      return i
-    end
-  end
-  return -1
+    (C[p,:] * M * transpose(C[f,:]))[1]
 end

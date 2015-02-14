@@ -77,6 +77,9 @@ for i = 1:size(dataset)[1]
     end
   end
 end
+if (length(programs) != length(ids) + length(idTesting))
+  println("ATTENZIONE: nel dataset non sono stati trovati tutti gli id dei programmi!")
+end
 toc()
 
 #costruisco la URM
@@ -110,12 +113,6 @@ tic()
 M = gradientDescent()
 toc()
 
-#costruisco la matrice con i ratings per i programmi futuri
-println("Calcolo la matrice R dei ratings per i programmi futuri ...")
-tic()
-R = buildR()
-toc()
+rec1 = getRecommendation(3513)
 
 println("Fine.")
-
-R
