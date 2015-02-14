@@ -6,15 +6,17 @@ end
 
 #Calcola la matrice di similarità tra item S
 function buildS ()
-  lengthS = max(ids[indmax(ids)], idTesting[indmax(idTesting)])
+  lengthS = length(ids) + length(idTesting)
   S = spzeros(lengthS, lengthS)
   for i=1:length(ids)
     for j=i:length(ids)
+      row = programs[ids[i]]
+      col = programs[ids[j]]
       if (i == j)
-        S[ids[i], ids[j]] = 1
+        S[row, col] = 1
       else
         #sfrutto la simmetria della matrice S per il calcolo della similarità
-        S[ids[i], ids[j]] = S[ids[j], ids[i]] = cosineSimilarity(URM[:,ids[i]], URM[:,ids[j]])
+        S[row, col] = S[col, row] = cosineSimilarity(URM[:,row], URM[:,col])
       end
     end
   end

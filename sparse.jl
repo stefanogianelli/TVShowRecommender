@@ -40,6 +40,8 @@ toc()
 println("Carico gli id dei programmi di testing")
 tic()
 idTesting = loadProgramIds(testingPath)
+#rimuovo i programId che sono già presenti in quelli di testing
+idTesting = setdiff(idTesting, intersect(idTesting, ids))
 toc()
 
 #carico il dataset
@@ -48,13 +50,43 @@ tic()
 dataset = int(readdlm(datasetPath, ',', use_mmap=true))
 toc()
 
-#creo un vettore con la lista degli utenti
-println("Salvo la lista degli utenti univoci ...")
+#filtro il dataset
+println("Filtro il dataset ...")
 tic()
-users = unique(dataset[:,6])
+ratings = Dict()
+programs = Dict()
+countProg = 1
+users = Dict()
+countUser = 1
+for i = 1:size(dataset)[1]
+  if (dataset[i,3] != 14 && dataset[i,3] != 19)
+    if (in(dataset[i,7], ids) || in(dataset[i,7], idTesting))
+      try
+        ratings[dataset[i,6], dataset[i,7]] += dataset[i,9]
+      catch
+        ratings[dataset[i,6], dataset[i,7]] = dataset[i,9]
+      end
+      if (!in(dataset[i,6], keys(users)))
+        users[dataset[i,6]] = countUser
+        countUser += 1
+      end
+      if (!in(dataset[i,7], keys(programs)))
+        programs[dataset[i,7]] = countProg
+        countProg += 1
+      end
+    end
+  end
+end
 toc()
 
-URM = sparse(dataset[:,6], dataset[:,7], dataset[:,9])
+#costruisco la URM
+println("Costruisco la URM ...")
+tic()
+URM = spzeros(length(users), length(programs))
+for r in ratings
+  URM[users[r[1][1]], programs[r[1][2]]] = r[2]
+end
+toc()
 
 #calcolo la matrice S tramite adjusted cosine similarity
 println("Calcolo la matrice S ...")
