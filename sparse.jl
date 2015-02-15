@@ -58,60 +58,11 @@ ratings = Dict()
 testingRatings = Dict()
 #dizionario degli utenti
 users = Dict()
-countUser = 1
 #dizionario dei programmi
 programs = Dict()
-countProg = 1
 #dizionario dei generi
 #genres = Dict()
-#scansiono tutto il dataset
-for i = 1:size(dataset)[1]
-  #elimino le settimne 14 e 19
-  if (dataset[i,3] != 14 && dataset[i,3] != 19)
-    #controllo se l id corrente è nell insieme degli id di training
-    if (in(dataset[i,7], ids))
-      try
-        ratings[dataset[i,6], dataset[i,7]] += dataset[i,9]
-      catch
-        ratings[dataset[i,6], dataset[i,7]] = dataset[i,9]
-      end
-      #aggiungo l utente corrente
-      if (!in(dataset[i,6], keys(users)))
-        users[dataset[i,6]] = countUser
-        countUser += 1
-      end
-      #aggiungo il programma corrente
-      if (!in(dataset[i,7], keys(programs)))
-        programs[dataset[i,7]] = countProg
-        countProg += 1
-      end
-    #controllo se l id corrente è nell insieme degli id di testing
-    elseif (in(dataset[i,7], idTesting))
-      try
-        testingRatings[dataset[i,6], dataset[i,7]] += dataset[i,9]
-      catch
-        testingRatings[dataset[i,6], dataset[i,7]] = dataset[i,9]
-      end
-      #aggiungo l utente corrente
-      if (!in(dataset[i,6], keys(users)))
-        users[dataset[i,6]] = countUser
-        countUser += 1
-      end
-      #aggiungo il programma corrente
-      if (!in(dataset[i,7], keys(programs)))
-        programs[dataset[i,7]] = countProg
-        countProg += 1
-      end
-    end
-  end
-  #creo un dizionario con i generi e sottogeneri dei programmi
-  #=if (!in(dataset[i,7], keys(genres)))
-    genres[dataset[i,7]] = (dataset[i,4], dataset[i,5])
-  end=#
-end
-if (length(programs) != length(ids) + length(idTesting))
-  println("ATTENZIONE: nel dataset non sono stati trovati tutti gli id dei programmi!")
-end
+clean_dataset!(dataset, ids, idTesting, ratings, testingRatings, users, programs)
 toc()
 
 #costruisco la URM di training
@@ -135,7 +86,7 @@ toc()
 #calcolo la matrice S tramite adjusted cosine similarity
 println("Calcolo la matrice S ...")
 tic()
-S = build_similarity_matrix ()
+S = build_similarity_matrix (programs, ids, URM)
 toc()
 
 #calcolo la matrice C
@@ -151,12 +102,12 @@ T = transpose(C) * C
 #calcolo la matrice M
 println("Calcolo la matrice M ottimale ...")
 tic()
-M = gradient_descent (alpha)
+M = gradient_descent (alpha, length(programs), S, C, Q, T)
 toc()
 
 #cerco le raccomandazioni per tutti gli utenti
 for u in users
-  rec = get_recommendation(u[2])
+  rec = get_recommendation(u[2], idTesting, programs, URM, C, M)
   println("$(u[1]) : $rec")
 end
 

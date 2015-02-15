@@ -4,8 +4,66 @@ function load_program_ids (filename::String)
   return int(unique(programInfo[:,2]))
 end
 
+function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings::Dict, testingRatings::Dict, users::Dict, programs::Dict)
+  #inizializzo contattori
+  countUser = 1
+  countProg = 1
+  #scansiono tutto il dataset
+  for i = 1:size(dataset)[1]
+    #elimino le settimne 14 e 19
+    if (dataset[i,3] != 14 && dataset[i,3] != 19)
+      #controllo se l id corrente è nell insieme degli id di training
+      if (in(dataset[i,7], ids))
+        try
+          ratings[dataset[i,6], dataset[i,7]] += dataset[i,9]
+        catch
+          ratings[dataset[i,6], dataset[i,7]] = dataset[i,9]
+        end
+        #aggiungo l utente corrente
+        if (!in(dataset[i,6], keys(users)))
+          users[dataset[i,6]] = countUser
+          countUser += 1
+        end
+        #aggiungo il programma corrente
+        if (!in(dataset[i,7], keys(programs)))
+          programs[dataset[i,7]] = countProg
+          countProg += 1
+        end
+        #creo un dizionario con i generi e sottogeneri dei programmi
+        #=if (!in(dataset[i,7], keys(genres)))
+          genres[dataset[i,7]] = (dataset[i,4], dataset[i,5])
+        end=#
+      #controllo se l id corrente è nell insieme degli id di testing
+      elseif (in(dataset[i,7], idTesting))
+        try
+          testingRatings[dataset[i,6], dataset[i,7]] += dataset[i,9]
+        catch
+          testingRatings[dataset[i,6], dataset[i,7]] = dataset[i,9]
+        end
+        #aggiungo l utente corrente
+        if (!in(dataset[i,6], keys(users)))
+          users[dataset[i,6]] = countUser
+          countUser += 1
+        end
+        #aggiungo il programma corrente
+        if (!in(dataset[i,7], keys(programs)))
+          programs[dataset[i,7]] = countProg
+          countProg += 1
+        end
+        #creo un dizionario con i generi e sottogeneri dei programmi
+        #=if (!in(dataset[i,7], keys(genres)))
+          genres[dataset[i,7]] = (dataset[i,4], dataset[i,5])
+        end=#
+      end
+    end
+  end
+  if (length(programs) != length(ids) + length(idTesting))
+    println("ATTENZIONE: nel dataset non sono stati trovati tutti gli id dei programmi!")
+  end
+end
+
 #Calcola la matrice di similarità tra item S
-function build_similarity_matrix ()
+function build_similarity_matrix (programs::Dict, ids::Array, URM::SparseMatrixCSC)
   lengthS = length(programs)
   S = spzeros(lengthS, lengthS)
   for i = 1:length(ids)
@@ -16,7 +74,7 @@ function build_similarity_matrix ()
         S[p1, p2] = 1
       else
         #sfrutto la simmetria della matrice S per il calcolo della similarità
-        S[p1, p2] = S[p2, p1] = cosine_similarity(URM[:,p1], URM[:,p2])
+        S[p1, p2] = S[p2, p1] = cosine_similarity(URM[:,p1], URM[:,p2], URM)
       end
     end
   end
@@ -24,7 +82,7 @@ function build_similarity_matrix ()
 end
 
 #calcola la cosine similarity tra due vettori
-function cosine_similarity (a::SparseMatrixCSC, b::SparseMatrixCSC)
+function cosine_similarity (a::SparseMatrixCSC, b::SparseMatrixCSC, URM::SparseMatrixCSC)
   #cerco gli utenti che hanno dato un voto ad entrambi i programmi
   indexes = intersect(rowvals(a), rowvals(b))
   #calcolo il numeratore
@@ -36,7 +94,7 @@ function cosine_similarity (a::SparseMatrixCSC, b::SparseMatrixCSC)
   #eseguo tutti i conti in un unico ciclo
   for n in indexes
     #calcolo la media dei rating dati dall'utente corrente
-    avg = user_average(n)
+    avg = user_average(n, URM)
     num += (a[n] - avg)*(b[n] - avg)
     den1 += (a[n] - avg)^2
     den2 += (b[n] - avg)^2
@@ -51,7 +109,7 @@ function cosine_similarity (a::SparseMatrixCSC, b::SparseMatrixCSC)
 end
 
 #calcola la media dei ratings dati dall'utente n
-function user_average (userIndex::Int)
+function user_average (userIndex::Int, URM::SparseMatrixCSC)
   ratings = nonzeros(URM[userIndex,:])
   size = length(ratings)
   if size != 0
@@ -118,17 +176,16 @@ function compute_item_item_similarity (genreTable::Matrix, ids::Vector)
 end
 
 #Calcola la matrice M ottimale attraverso SGD
-function gradient_descent (a::Number)
+function gradient_descent (a::Number, MSize::Int, S::SparseMatrixCSC, C::SparseMatrixCSC, Q::SparseMatrixCSC, T::SparseMatrixCSC)
   #inizializzo la matrice M
-  MSize = length(programs)
   M = Mnew = spzeros(MSize, MSize)
-  fval = object(M)
+  fval = object(M, S, C)
   @printf "Start value: %f\nStart alpha: %f\n" fval a
   #calcolo la matrice M ottimale
   i = 1
   while i <= miter && object(M) > tol
-    Mnew = M - (a / size(M)[1]) * grad(M)
-    f = object(Mnew)
+    Mnew = M - (a / size(M)[1]) * grad(M, T, Q)
+    f = object(Mnew, S, C)
     if f <= fval
       M = Mnew
       fval = f
@@ -138,30 +195,30 @@ function gradient_descent (a::Number)
     end
     i += 1
   end
-  @printf "End value: %f\nEnd alpha: %f\n" object(M) a
+  @printf "End value: %f\nEnd alpha: %f\n" fval a
   return M
 end
 
 #definisco la funzione obiettivo
-function object (X::SparseMatrixCSC)
+function object (X::SparseMatrixCSC, S::SparseMatrixCSC, C::SparseMatrixCSC)
   (vecnorm(S - C * X * transpose(C)))^2
 end
 
 #restituisce il gradiente della funzione obiettivo
-function grad (X::SparseMatrixCSC)
+function grad (X::SparseMatrixCSC, T, Q)
   2 * T * X * T - 2 * Q
 end
 
 #Restituisce gli spettacoli consigliati all utente "user"
-function get_recommendation (userIndex::Int)
+function get_recommendation (userIndex::Int, idTesting::Array, programs::Dict, URM::SparseMatrixCSC, C::SparseMatrixCSC, M::SparseMatrixCSC)
   ratings = Dict()
   for prog in idTesting
     progIndex = programs[prog]
-    p = get_tau(userIndex, progIndex)
+    p = get_tau(userIndex, progIndex, C, URM)
     num = 0
     den = 0
     for k in p
-      s = compute_similarity(k,progIndex)
+      s = compute_similarity(k,progIndex, C, M)
       num += URM[userIndex, k] * s
       den += s
     end
@@ -176,13 +233,13 @@ function get_recommendation (userIndex::Int)
 end
 
 #Restituisce l insieme tau dei programmi trasmessi simili a quello futuro preso in considerazine per un utente
-function get_tau (userIndex::Int, futureIndex::Int)
+function get_tau (userIndex::Int, futureIndex::Int, C::SparseMatrixCSC, URM::SparseMatrixCSC)
   set = transpose(C[futureIndex,:])
   userRated = transpose(URM[userIndex,:])
   intersect(rowvals(set), rowvals(userRated))
 end
 
 #Calcola la similarità tra uno spettacolo passato ed uno futuro
-function compute_similarity (pastIndex::Int, futureIndex::Int)
+function compute_similarity (pastIndex::Int, futureIndex::Int, C::SparseMatrixCSC, M::SparseMatrixCSC)
     (C[pastIndex,:] * M * transpose(C[futureIndex,:]))[1]
 end
