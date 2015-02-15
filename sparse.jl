@@ -53,55 +53,86 @@ toc()
 #pulisco il dataset
 println("Pulisco il dataset ...")
 tic()
+#dizionari dei ratings (training => ratings, testing => testingRatings)
 ratings = Dict()
-check = Dict()
-programs = Dict()
-#genres = Dict()
-countProg = 1
+testingRatings = Dict()
+#dizionario degli utenti
 users = Dict()
 countUser = 1
+#dizionario dei programmi (training => programs, testing => testProg)
+programs = Dict()
+countProg = 1
+testProg = Dict()
+countTestProg = 1
+#dizionario dei generi
+#genres = Dict()
+#scansiono tutto il dataset
 for i = 1:size(dataset)[1]
+  #elimino le settimne 14 e 19
   if (dataset[i,3] != 14 && dataset[i,3] != 19)
+    #controllo se l id corrente è nell insieme degli id di training
     if (in(dataset[i,7], ids))
       try
         ratings[dataset[i,6], dataset[i,7]] += dataset[i,9]
       catch
         ratings[dataset[i,6], dataset[i,7]] = dataset[i,9]
       end
+      #aggiungo l utente corrente
       if (!in(dataset[i,6], keys(users)))
         users[dataset[i,6]] = countUser
         countUser += 1
       end
+      #aggiungo il programma corrente
       if (!in(dataset[i,7], keys(programs)))
         programs[dataset[i,7]] = countProg
         countProg += 1
       end
+    #controllo se l id corrente è nell insieme degli id di testing
     elseif (in(dataset[i,7], idTesting))
       try
-        check[dataset[i,6], dataset[i,7]] += dataset[i,9]
+        testingRatings[dataset[i,6], dataset[i,7]] += dataset[i,9]
       catch
-        check[dataset[i,6], dataset[i,7]] = dataset[i,9]
+        testingRatings[dataset[i,6], dataset[i,7]] = dataset[i,9]
+      end
+      #aggiungo l utente corrente
+      if (!in(dataset[i,6], keys(users)))
+        users[dataset[i,6]] = countUser
+        countUser += 1
+      end
+      #aggiungo il programma corrente
+      if (!in(dataset[i,7], keys(testProg)))
+        testProg[dataset[i,7]] = countTestProg
+        countTestProg += 1
       end
     end
-    #genres[dataset[i,7]] = (dataset[i,4], dataset[i,5])
   end
+  #creo un dizionario con i genere e sottogeneri dei programmi
+  #=if (!in(dataset[i,7], keys(genres)))
+    genres[dataset[i,7]] = (dataset[i,4], dataset[i,5])
+  end=#
 end
-#aggiungo gli id dei programmi di test
-for id in idTesting
-  programs[id] = countProg
-  countProg += 1
-end
-if (length(programs) != length(ids) + length(idTesting))
+if (length(programs) + length(testProg) != length(ids) + length(idTesting))
   println("ATTENZIONE: nel dataset non sono stati trovati tutti gli id dei programmi!")
 end
 toc()
 
-#costruisco la URM
-println("Costruisco la URM ...")
+#costruisco la URM di training
+println("Costruisco la URM di Training ...")
 tic()
-URM = spzeros(length(users), length(ids))
+URM = spzeros(length(users), length(programs))
 for r in ratings
   URM[users[r[1][1]], programs[r[1][2]]] = r[2]
+end
+toc()
+
+URM
+
+#costruisco la URM di testing
+println("Costruisco la URM di Testing ...")
+tic()
+URMT = spzeros(length(users), length(testProg))
+for r in testingRatings
+  URMT[users[r[1][1]], testProg[r[1][2]]] = r[2]
 end
 toc()
 
@@ -128,7 +159,7 @@ M = gradientDescent()
 toc()
 
 #cerco le raccomandazioni per tutti gli utenti
-for u in keys(users)
+for u in keys(testUsers)
   rec = getRecommendation(u)
   println("$u : $rec")
 end
