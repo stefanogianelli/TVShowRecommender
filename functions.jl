@@ -183,7 +183,7 @@ function gradient_descent (a::Number, MSize::Int, S::SparseMatrixCSC, C::SparseM
   @printf "Start value: %f\nStart alpha: %f\n" fval a
   #calcolo la matrice M ottimale
   i = 1
-  while i <= miter && object(M) > tol
+  while i <= miter && fval > tol
     Mnew = M - (a / size(M)[1]) * grad(M, T, Q)
     f = object(Mnew, S, C)
     if f <= fval
@@ -211,7 +211,7 @@ end
 
 #Restituisce gli spettacoli consigliati all utente "user"
 function get_recommendation (userIndex::Int, idTesting::Array, programs::Dict, URM::SparseMatrixCSC, C::SparseMatrixCSC, M::SparseMatrixCSC)
-  ratings = Dict()
+  ratings = spzeros(1, length(programs))
   for prog in idTesting
     progIndex = programs[prog]
     p = get_tau(userIndex, progIndex, C, URM)
@@ -227,7 +227,7 @@ function get_recommendation (userIndex::Int, idTesting::Array, programs::Dict, U
     else
       res = 0
     end
-    ratings[prog] = res
+    ratings[1, progIndex] = res
   end
   return ratings
 end

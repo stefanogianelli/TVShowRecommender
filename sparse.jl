@@ -107,8 +107,21 @@ toc()
 
 #cerco le raccomandazioni per tutti gli utenti
 for u in users
+  #lista dei rating dati dall utente
+  ratings = vec(dense(URMT[u[2],:]))
+  orderedItems = sortperm(ratings, rev=true)
+  #raccomandazioni per l utente corrente
   rec = get_recommendation(u[2], idTesting, programs, URM, C, M)
-  println("$(u[1]) : $rec")
+  recvet = vec(dense(rec))
+  orderedRec = sortperm(recvet, rev=true)
+  #limito i risultati ai top-N
+  orderedItems = orderedItems[1:N]
+  orderedRec = orderedRec[1:N]
+  #calcolo precision
+  prec = length(intersect(orderedItems, orderedRec)) / length(orderedRec)
+  #calcolo recall
+  rec = length(intersect(orderedItems, orderedRec)) / length(orderedItems)
+  println("u[1] - precision = $prec - recall = $rec")
 end
 
 println("Fine.")
