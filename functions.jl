@@ -176,15 +176,9 @@ end
 
 #Restituisce l insieme tau dei programmi trasmessi simili a quello futuro preso in considerazine per un utente
 function getTau (u::Int, f::Int)
-  common = Int64[]
-  set = C[f,:]
-  userRated = URM[u,:]
-  for i=1:length(userRated)
-    if (set[i] != 0 && userRated[i] != 0)
-      push!(common, i)
-    end
-  end
-  return common
+  set = transpose(C[f,:])
+  userRated = transpose(URM[u,:])
+  intersect(rowvals(set), rowvals(userRated))
 end
 
 #Calcola la similarità tra uno spettacolo passato ed uno futuro
