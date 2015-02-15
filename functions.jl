@@ -6,17 +6,17 @@ end
 
 #Calcola la matrice di similarità tra item S
 function buildS ()
-  lengthS = length(ids) + length(idTesting)
+  lengthS = length(programs)
   S = spzeros(lengthS, lengthS)
   for i=1:length(ids)
     for j=i:length(ids)
-      row = programs[ids[i]]
-      col = programs[ids[j]]
+      p1 = programs[ids[i]]
+      p2 = programs[ids[j]]
       if (i == j)
-        S[row, col] = 1
+        S[p1, p2] = 1
       else
         #sfrutto la simmetria della matrice S per il calcolo della similarità
-        S[row, col] = S[col, row] = cosineSimilarity(URM[:,row], URM[:,col])
+        S[p1, p2] = S[p2, p1] = cosineSimilarity(URM[:,p1], URM[:,p2])
       end
     end
   end
@@ -120,7 +120,7 @@ end
 function gradientDescent ()
   a = alpha
   #inizializzo la matrice M
-  MSize= length(ids) + length(idTesting)
+  MSize= length(programs)
   M = Mnew = spzeros(MSize, MSize)
   fval = object(M)
   @printf "Start value: %f\nStart alpha: %f\n" fval a
@@ -152,13 +152,13 @@ function grad(X::SparseMatrixCSC)
 end
 
 #Restituisce gli spettacoli consigliati all utente "user"
-function getRecommendation (user::Int)
+function getRecommendation (userIndex::Int)
   ratings = Dict()
-  userIndex = users[user]
   for prog in idTesting
     progIndex = programs[prog]
     p = getTau(userIndex, progIndex)
-    num = den = 0
+    num = 0
+    den = 0
     for k in p
       s = computeSimilarity(k,progIndex)
       num += URM[userIndex, k] * s
@@ -174,7 +174,7 @@ function getRecommendation (user::Int)
   return ratings
 end
 
-#Restituisce linsieme tau dei programmi trasmessi simili a quello futuro preso in considerazine per un utente
+#Restituisce l insieme tau dei programmi trasmessi simili a quello futuro preso in considerazine per un utente
 function getTau (u::Int, f::Int)
   common = Int64[]
   set = C[f,:]

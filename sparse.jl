@@ -20,7 +20,7 @@ miter = 1000
 alpha = 0.001
 #incremento percentuale del learning rate (SGD)
 deltaAlpha = 5
-#numero item simili (calcolo R)
+#numero item simili
 N = 5
 
 #=
@@ -40,7 +40,7 @@ toc()
 println("Carico gli id dei programmi di testing")
 tic()
 idTesting = loadProgramIds(testingPath)
-#rimuovo i programId che sono già presenti in quelli di testing
+#rimuovo i programId che sono già presenti in quelli di training
 idTesting = setdiff(idTesting, intersect(idTesting, ids))
 toc()
 
@@ -59,11 +59,9 @@ testingRatings = Dict()
 #dizionario degli utenti
 users = Dict()
 countUser = 1
-#dizionario dei programmi (training => programs, testing => testProg)
+#dizionario dei programmi
 programs = Dict()
 countProg = 1
-testProg = Dict()
-countTestProg = 1
 #dizionario dei generi
 #genres = Dict()
 #scansiono tutto il dataset
@@ -100,18 +98,18 @@ for i = 1:size(dataset)[1]
         countUser += 1
       end
       #aggiungo il programma corrente
-      if (!in(dataset[i,7], keys(testProg)))
-        testProg[dataset[i,7]] = countTestProg
-        countTestProg += 1
+      if (!in(dataset[i,7], keys(programs)))
+        programs[dataset[i,7]] = countProg
+        countProg += 1
       end
     end
   end
-  #creo un dizionario con i genere e sottogeneri dei programmi
+  #creo un dizionario con i generi e sottogeneri dei programmi
   #=if (!in(dataset[i,7], keys(genres)))
     genres[dataset[i,7]] = (dataset[i,4], dataset[i,5])
   end=#
 end
-if (length(programs) + length(testProg) != length(ids) + length(idTesting))
+if (length(programs) != length(ids) + length(idTesting))
   println("ATTENZIONE: nel dataset non sono stati trovati tutti gli id dei programmi!")
 end
 toc()
@@ -125,14 +123,12 @@ for r in ratings
 end
 toc()
 
-URM
-
 #costruisco la URM di testing
 println("Costruisco la URM di Testing ...")
 tic()
-URMT = spzeros(length(users), length(testProg))
+URMT = spzeros(length(users), length(programs))
 for r in testingRatings
-  URMT[users[r[1][1]], testProg[r[1][2]]] = r[2]
+  URMT[users[r[1][1]], programs[r[1][2]]] = r[2]
 end
 toc()
 
@@ -159,9 +155,9 @@ M = gradientDescent()
 toc()
 
 #cerco le raccomandazioni per tutti gli utenti
-for u in keys(users)
-  rec = getRecommendation(u)
-  println("$u : $rec")
+for u in users
+  rec = getRecommendation(u[2])
+  println("$(u[1]) : $rec")
 end
 
 println("Fine.")
