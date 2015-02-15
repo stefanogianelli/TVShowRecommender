@@ -154,7 +154,7 @@ end
 #Restituisce gli spettacoli consigliati all utente "user"
 function getRecommendation (user::Int)
   ratings = Dict()
-  userIndex = testUsers[user]
+  userIndex = users[user]
   for prog in idTesting
     progIndex = programs[prog]
     p = getTau(userIndex, progIndex)
