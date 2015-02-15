@@ -33,13 +33,13 @@ cd(dirname(@__FILE__))
 #carico la matrice con le informazioni sui programmi di training
 println("Carico gli id dei programmi di training")
 tic()
-ids = loadProgramIds(trainingPath)
+ids = load_program_ids(trainingPath)
 toc()
 
 #carico la matrice con le informazioni sui programmi di testing
 println("Carico gli id dei programmi di testing")
 tic()
-idTesting = loadProgramIds(testingPath)
+idTesting = load_program_ids(testingPath)
 #rimuovo i programId che sono già presenti in quelli di training
 idTesting = setdiff(idTesting, intersect(idTesting, ids))
 toc()
@@ -135,13 +135,13 @@ toc()
 #calcolo la matrice S tramite adjusted cosine similarity
 println("Calcolo la matrice S ...")
 tic()
-S = buildS()
+S = build_similarity_matrix ()
 toc()
 
 #calcolo la matrice C
 println("Calcolo la matrice C")
 tic()
-C = computeItemItemSim(dataset, [ids,idTesting])
+C = compute_item_item_similarity (dataset, [ids,idTesting])
 toc()
 
 #eseguo i calcoli per il gradiente che non devono essere rifatti ogni volta
@@ -151,12 +151,12 @@ T = transpose(C) * C
 #calcolo la matrice M
 println("Calcolo la matrice M ottimale ...")
 tic()
-M = gradientDescent()
+M = gradient_descent (alpha)
 toc()
 
 #cerco le raccomandazioni per tutti gli utenti
 for u in users
-  rec = getRecommendation(u[2])
+  rec = get_recommendation(u[2])
   println("$(u[1]) : $rec")
 end
 
