@@ -169,7 +169,9 @@ function compute_item_item_similarity (genreTable::Matrix, ids::Vector)
          k=1.0
         end
        end
-      C[i,l ]= C[l,i] = k
+      p1 = programs[ids[i]]
+      p2 = programs[ids[l]]
+      C[p1,p2]= C[p2,p1] = k
     end
   end
   return C
