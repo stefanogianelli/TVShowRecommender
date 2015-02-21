@@ -6,6 +6,7 @@ PARAMETRI
 
 #permette di scegliere la cartella
 dir = ".\\dataset"
+#dir = "C:\\Users\\Stefano\\Desktop\\tvshow"
 #percorso dati di training
 trainingPath = "$dir\\training.txt"
 #percorso dati di testing
@@ -58,10 +59,21 @@ ratings = Dict()
 testingRatings = Dict()
 #dizionario degli utenti
 users = Dict()
+testingUsers = Dict()
 #dizionario dei programmi
 programs = Dict()
-clean_dataset!(dataset, ids, idTesting, ratings, testingRatings, users, programs)
+clean_dataset!(dataset, ids, idTesting, ratings, testingRatings, users, testingUsers, programs)
 toc()
+
+#mostro un avviso nel caso ci siano discrepanze tra il numero di programmi trovati
+if length(programs) != length(ids) + length(idTesting)
+  println("ATTENZIONE: nel dataset non sono stati trovati tutti gli id dei programmi!")
+end
+
+#mostro un avviso nel caso non esistano utenti in comune tra training e testing
+if length(intersect(keys(users), keys(testingUsers))) == 0
+  println("ATTENZIONE: non esistono utenti confrontabili!")
+end
 
 #costruisco la URM di training
 println("Costruisco la URM di Training ...")
@@ -75,9 +87,9 @@ toc()
 #costruisco la URM di testing
 println("Costruisco la URM di Testing ...")
 tic()
-URMT = spzeros(length(users), length(programs))
+URMT = spzeros(length(testingUsers), length(programs))
 for r in testingRatings
-  URMT[users[r[1][1]], programs[r[1][2]]] = r[2]
+  URMT[testingUsers[r[1][1]], programs[r[1][2]]] = r[2]
 end
 toc()
 
@@ -108,15 +120,15 @@ println("Valuto l'efficienza dell'algoritmo ...")
 tic()
 totPrec = totRec = 0
 count = 0
-for u in users
-  #verifico che l utente abbia almeno un ratings
-  if length(nonzeros(URMT[u[2],:])) != 0
+for u in testingUsers
+  #verifico che l'utente esista nella lista degli utenti di training
+  if in(u[1], keys(users))
     count += 1
     #genero lista ordinata degli spettacoli in base ai ratings dati dall utente
     ratings = vec(dense(URMT[u[2],:]))
     orderedItems = sortperm(ratings, rev=true)
     #genero lista ordinata delle raccomandazioni per l utente corrente
-    rec = get_recommendation(u[2], idTesting, programs, URM, C, M)
+    rec = get_recommendation(users[u[1]], idTesting, programs, URM, C, M)
     recvet = vec(full(rec))
     orderedRec = sortperm(recvet, rev=true)
     #limito i risultati ai top-N
@@ -148,7 +160,8 @@ println("-----------------------------------------------------------------------
 println("Numero programmi di training: $(length(ids))")
 println("Numero programmi di testing: $(length(idTesting))")
 println("Numero di utenti: $(length(users))")
-println("Numero utenti di testing: $count")
+println("Numero utenti di testing: $(length(testingUsers))")
+println("Numero di utenti in comune: $count")
 
 #Stampo Risultati
 println("-----------------------------------------------------------------------------")

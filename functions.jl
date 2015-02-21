@@ -4,9 +4,10 @@ function load_program_ids (filename::String)
   return int(unique(programInfo[:,2]))
 end
 
-function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings::Dict, testingRatings::Dict, users::Dict, programs::Dict)
+function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings::Dict, testingRatings::Dict, users::Dict, testingUsers::Dict, programs::Dict)
   #inizializzo contattori
   countUser = 1
+  countTestUser = 1
   countProg = 1
   #scansiono tutto il dataset
   for i = 1:size(dataset)[1]
@@ -37,9 +38,9 @@ function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings:
           testingRatings[dataset[i,6], dataset[i,7]] = dataset[i,9]
         end
         #aggiungo l'utente corrente
-        if (!in(dataset[i,6], keys(users)))
-          users[dataset[i,6]] = countUser
-          countUser += 1
+        if (!in(dataset[i,6], keys(testingUsers)))
+          testingUsers[dataset[i,6]] = countTestUser = 1
+          countTestUser += 1
         end
         #aggiungo il programma corrente
         if (!in(dataset[i,7], keys(programs)))
@@ -48,9 +49,6 @@ function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings:
         end
       end
     end
-  end
-  if (length(programs) != length(ids) + length(idTesting))
-    println("ATTENZIONE: nel dataset non sono stati trovati tutti gli id dei programmi!")
   end
 end
 
