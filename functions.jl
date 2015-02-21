@@ -29,10 +29,6 @@ function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings:
           programs[dataset[i,7]] = countProg
           countProg += 1
         end
-        #creo un dizionario con i generi e sottogeneri dei programmi
-        #=if (!in(dataset[i,7], keys(genres)))
-          genres[dataset[i,7]] = (dataset[i,4], dataset[i,5])
-        end=#
       #controllo se l id corrente è nell insieme degli id di testing
       elseif (in(dataset[i,7], idTesting))
         try
@@ -50,10 +46,6 @@ function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings:
           programs[dataset[i,7]] = countProg
           countProg += 1
         end
-        #creo un dizionario con i generi e sottogeneri dei programmi
-        #=if (!in(dataset[i,7], keys(genres)))
-          genres[dataset[i,7]] = (dataset[i,4], dataset[i,5])
-        end=#
       end
     end
   end
@@ -119,24 +111,6 @@ function user_average (userIndex::Int, URM::SparseMatrixCSC)
   end
 end
 
-#=function calc_c ()
-  C = spzeros(length(programs))
-  for i = 1:length(ids)
-    id1 = programs[ids[i]]
-    for j = i:length(ids)
-      id2 = programs[ids[j]]
-      if genres[ids[i]][1] == genres[ids[j]][1]
-        if genres[ids[i]][2] == genres[ids[j]][2]
-          C[id1,id2] = C[id2,id1] = 1
-        else
-          C[id1,id2] = C[id2,id1] = 0.5
-        end
-      end
-    end
-  end
-  return C
-end=#
-
 #Restituisce la matrice di similarità rispetto ai contenuti di un certo set di programId
 function compute_item_item_similarity (genreTable::Matrix, ids::Vector)
   #considero solo le colonne: genreIdx, subGenreIdx, programIdx
@@ -160,6 +134,9 @@ function compute_item_item_similarity (genreTable::Matrix, ids::Vector)
 
   A_rows = size(matrixA)[1]
   C = spzeros(A_rows,A_rows)
+  for i = 1:size(C)[1]
+    C[i,i] = 1
+  end
   for i = 1:(A_rows-1)
     for l = i+1:(A_rows)
       k=0.0

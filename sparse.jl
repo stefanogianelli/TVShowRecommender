@@ -60,8 +60,6 @@ testingRatings = Dict()
 users = Dict()
 #dizionario dei programmi
 programs = Dict()
-#dizionario dei generi
-#genres = Dict()
 clean_dataset!(dataset, ids, idTesting, ratings, testingRatings, users, programs)
 toc()
 
