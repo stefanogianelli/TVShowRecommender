@@ -115,11 +115,15 @@ for u in users
   #limito i risultati ai top-N
   orderedItems = orderedItems[1:N]
   orderedRec = orderedRec[1:N]
+  #calcolo gli insiemi True Positive, False Positive e False Negative
+  TP = length(intersect(orderedItems, orderedRec))
+  FP = length(setdiff(orderedRec, orderedItems))
+  FN = length(setdiff(orderedItems, orderedRec))
   #calcolo precision
-  prec = length(intersect(orderedItems, orderedRec)) / length(orderedRec)
+  prec = TP / (TP + FP)
   #calcolo recall
-  rec = length(intersect(orderedItems, orderedRec)) / length(orderedItems)
-  println("u[1] - precision = $prec - recall = $rec")
+  rec = TP / (TP + FN)
+  println("utente $(u[1])\n\tprecision = $prec\n\trecall = $rec")
 end
 
 println("Fine.")
