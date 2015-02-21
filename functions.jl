@@ -159,22 +159,30 @@ function gradient_descent (a::Number, MSize::Int, S::SparseMatrixCSC, C::SparseM
   #inizializzo la matrice M
   M = Mnew = spzeros(MSize, MSize)
   fval = object(M, S, C)
-  @printf "Start value: %f\nStart alpha: %f\n" fval a
+  gain = 1
+  println("Start value: $fval\nStart alpha: $a\n")
   #calcolo la matrice M ottimale
   i = 1
-  while i <= miter && fval > tol
+  count = 1
+  while fval > tol && gain > tol
     Mnew = M - (a / size(M)[1]) * grad(M, T, Q)
     f = object(Mnew, S, C)
     if f <= fval
+      gain = abs(fval - f)
       M = Mnew
       fval = f
       a += (a * deltaAlpha / 100)
     else
       a /= 2
     end
+    if count == 2000
+      println("Ciclo $i\nf = $fval\ngain = $gain\n---------------------")
+      count = 0
+    end
     i += 1
+    count += 1
   end
-  @printf "End value: %f\nEnd alpha: %f\n" fval a
+  println("End value: $fval\nEnd alpha: $a\n# iter = $i\ngain = $gain")
   return M
 end
 

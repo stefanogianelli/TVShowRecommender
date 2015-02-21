@@ -13,7 +13,7 @@ testingPath = "$dir\\testing.txt"
 #percorso dataset
 datasetPath = "$dir\\data.txt"
 #tolleranza (SGD)
-tol = 1e-6
+tol = 1e-8
 #numero massimo iterazioni (SGD)
 miter = 1000
 #dimensione passo (SGD)
