@@ -104,6 +104,7 @@ M = gradient_descent (alpha, length(programs), S, C, Q, T)
 toc()
 
 #cerco le raccomandazioni per tutti gli utenti
+totPrec = totRec = 0
 for u in users
   #lista dei rating dati dall utente
   ratings = vec(dense(URMT[u[2],:]))
@@ -121,9 +122,19 @@ for u in users
   FN = length(setdiff(orderedItems, orderedRec))
   #calcolo precision
   prec = TP / (TP + FP)
+  totPrec += prec
   #calcolo recall
   rec = TP / (TP + FN)
-  println("utente $(u[1])\n\tprecision = $prec\n\trecall = $rec")
+  totRec += rec
+  #println("utente $(u[1])\n\tprecision = $prec\n\trecall = $rec")
 end
+
+#normalizzo i calcoli della precision e recall
+len = length(users)
+endPrec = totPrec / len
+endRec = totRec / len
+
+#Stampo Risultati
+println("Precision@$N = $endPrec\nRecall@$N = $endRec")
 
 println("Fine.")
