@@ -12,14 +12,14 @@ function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings:
   for i = 1:size(dataset)[1]
     #elimino le settimne 14 e 19
     if (dataset[i,3] != 14 && dataset[i,3] != 19)
-      #controllo se l id corrente è nell insieme degli id di training
+      #controllo se l'id corrente è nell'insieme degli id di training
       if (in(dataset[i,7], ids))
         try
           ratings[dataset[i,6], dataset[i,7]] += dataset[i,9]
         catch
           ratings[dataset[i,6], dataset[i,7]] = dataset[i,9]
         end
-        #aggiungo l utente corrente
+        #aggiungo l'utente corrente
         if (!in(dataset[i,6], keys(users)))
           users[dataset[i,6]] = countUser
           countUser += 1
@@ -29,14 +29,14 @@ function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings:
           programs[dataset[i,7]] = countProg
           countProg += 1
         end
-      #controllo se l id corrente è nell insieme degli id di testing
+      #controllo se l'id corrente è nell'insieme degli id di testing
       elseif (in(dataset[i,7], idTesting))
         try
           testingRatings[dataset[i,6], dataset[i,7]] += dataset[i,9]
         catch
           testingRatings[dataset[i,6], dataset[i,7]] = dataset[i,9]
         end
-        #aggiungo l utente corrente
+        #aggiungo l'utente corrente
         if (!in(dataset[i,6], keys(users)))
           users[dataset[i,6]] = countUser
           countUser += 1
@@ -196,7 +196,7 @@ function grad (X::SparseMatrixCSC, T, Q)
   2 * T * X * T - 2 * Q
 end
 
-#Restituisce gli spettacoli consigliati all utente "user"
+#Restituisce gli spettacoli consigliati all'utente "user"
 function get_recommendation (userIndex::Int, idTesting::Array, programs::Dict, URM::SparseMatrixCSC, C::SparseMatrixCSC, M::SparseMatrixCSC)
   ratings = spzeros(1, length(programs))
   for prog in idTesting
@@ -219,7 +219,7 @@ function get_recommendation (userIndex::Int, idTesting::Array, programs::Dict, U
   return ratings
 end
 
-#Restituisce l insieme tau dei programmi trasmessi simili a quello futuro preso in considerazine per un utente
+#Restituisce l'insieme tau dei programmi trasmessi simili a quello futuro preso in considerazine per un utente
 function get_tau (userIndex::Int, futureIndex::Int, C::SparseMatrixCSC, URM::SparseMatrixCSC)
   set = transpose(C[futureIndex,:])
   userRated = transpose(URM[userIndex,:])

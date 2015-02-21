@@ -21,7 +21,7 @@ alpha = 0.001
 #incremento percentuale del learning rate (SGD)
 deltaAlpha = 5
 #numero item simili
-N = 20
+N = 10
 
 #=
 MAIN
@@ -104,6 +104,8 @@ M = gradient_descent (alpha, length(programs), S, C, Q, T)
 toc()
 
 #cerco le raccomandazioni per tutti gli utenti
+println("Valuto l'efficienza dell'algoritmo ...")
+tic()
 totPrec = totRec = 0
 for u in users
   #genero lista ordinata degli spettacoli in base ai ratings dati dall utente
@@ -111,7 +113,7 @@ for u in users
   orderedItems = sortperm(ratings, rev=true)
   #genero lista ordinata delle raccomandazioni per l utente corrente
   rec = get_recommendation(u[2], idTesting, programs, URM, C, M)
-  recvet = vec(dense(rec))
+  recvet = vec(full(rec))
   orderedRec = sortperm(recvet, rev=true)
   #limito i risultati ai top-N
   if length(orderedItems) > N
@@ -138,5 +140,4 @@ endRec = totRec / len
 
 #Stampo Risultati
 println("Precision@$N = $endPrec\nRecall@$N = $endRec")
-
-println("Fine.")
+toc()
