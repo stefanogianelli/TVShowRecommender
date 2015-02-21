@@ -64,7 +64,7 @@ function build_similarity_matrix (programs::Dict, ids::Array, URM::SparseMatrixC
         S[p1, p2] = 1
       else
         #sfrutto la simmetria della matrice S per il calcolo della similarità
-        S[p1, p2] = S[p2, p1] = cosine_similarity(URM[:,p1], URM[:,p2], URM)
+        S[p1, p2] = S[p2, p1] = cosine_similarity(p1, p2, URM)
       end
     end
   end
@@ -72,7 +72,9 @@ function build_similarity_matrix (programs::Dict, ids::Array, URM::SparseMatrixC
 end
 
 #calcola la cosine similarity tra due vettori
-function cosine_similarity (a::SparseMatrixCSC, b::SparseMatrixCSC, URM::SparseMatrixCSC)
+function cosine_similarity (i1::Int, i2::Int, URM::SparseMatrixCSC)
+  a = URM[:,i1]
+  b = URM[:,i2]
   #cerco gli utenti che hanno dato un voto ad entrambi i programmi
   indexes = intersect(rowvals(a), rowvals(b))
   #calcolo il numeratore
