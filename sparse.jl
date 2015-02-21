@@ -22,7 +22,7 @@ alpha = 0.001
 #incremento percentuale del learning rate (SGD)
 deltaAlpha = 5
 #numero item simili
-N = 10
+N = [1, 5, 10, 20, 30, 40, 50]
 
 #=
 MAIN
@@ -118,41 +118,45 @@ toc()
 #cerco le raccomandazioni per tutti gli utenti
 println("Valuto l'efficienza dell'algoritmo ...")
 tic()
-totPrec = totRec = 0
-count = 0
-for u in testingUsers
-  #verifico che l'utente esista nella lista degli utenti di training
-  if in(u[1], keys(users))
-    count += 1
-    #genero lista ordinata degli spettacoli in base ai ratings dati dall utente
-    ratings = vec(dense(URMT[u[2],:]))
-    orderedItems = sortperm(ratings, rev=true)
-    #genero lista ordinata delle raccomandazioni per l utente corrente
-    rec = get_recommendation(users[u[1]], idTesting, programs, URM, C, M)
-    recvet = vec(full(rec))
-    orderedRec = sortperm(recvet, rev=true)
-    #limito i risultati ai top-N
-    if length(orderedItems) > N
-      orderedItems = orderedItems[1:N]
-      orderedRec = orderedRec[1:N]
+test_number = length(N)
+precision = recall = zeros(test_number)
+for i = 1:test_number
+  totPrec = totRec = 0
+  count = 0
+  for u in testingUsers
+    #verifico che l'utente esista nella lista degli utenti di training
+    if in(u[1], keys(users))
+      count += 1
+      #genero lista ordinata degli spettacoli in base ai ratings dati dall utente
+      ratings = vec(dense(URMT[u[2],:]))
+      orderedItems = sortperm(ratings, rev=true)
+      #genero lista ordinata delle raccomandazioni per l utente corrente
+      rec = get_recommendation(users[u[1]], idTesting, programs, URM, C, M)
+      recvet = vec(full(rec))
+      orderedRec = sortperm(recvet, rev=true)
+      #limito i risultati ai top-N
+      if length(orderedItems) > N[i]
+        orderedItems = orderedItems[1:N[i]]
+        orderedRec = orderedRec[1:N[i]]
+      end
+      #calcolo gli insiemi True Positive, False Positive e False Negative
+      #reference: http://www.kdnuggets.com/faq/precision-recall.html
+      TP = length(intersect(orderedItems, orderedRec))
+      FP = length(setdiff(orderedRec, orderedItems))
+      FN = length(setdiff(orderedItems, orderedRec))
+      #calcolo precision
+      #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
+      totPrec += TP / (TP + FP)
+      #calcolo recall
+      #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
+      totRec += TP / (TP + FN)
     end
-    #calcolo gli insiemi True Positive, False Positive e False Negative
-    #reference: http://www.kdnuggets.com/faq/precision-recall.html
-    TP = length(intersect(orderedItems, orderedRec))
-    FP = length(setdiff(orderedRec, orderedItems))
-    FN = length(setdiff(orderedItems, orderedRec))
-    #calcolo precision
-    #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
-    totPrec += TP / (TP + FP)
-    #calcolo recall
-    #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
-    totRec += TP / (TP + FN)
   end
-end
 
-#normalizzo i calcoli della precision e recall
-endPrec = totPrec / count
-endRec = totRec / count
+  #normalizzo i calcoli della precision e recall
+  precision[i] = totPrec / count
+  recall[i] = totRec / count
+end
 toc()
 
 #stampo statistiche
@@ -161,8 +165,9 @@ println("Numero programmi di training: $(length(ids))")
 println("Numero programmi di testing: $(length(idTesting))")
 println("Numero di utenti: $(length(users))")
 println("Numero utenti di testing: $(length(testingUsers))")
-println("Numero di utenti in comune: $count")
 
 #Stampo Risultati
 println("-----------------------------------------------------------------------------")
-println("Precision@$N = $endPrec\nRecall@$N = $endRec")
+for i = 1:test_number
+  println("Precision@$(N[i]) = $(precision[i])\nRecall@$(N[i]) = $(recall[i])")
+end
