@@ -107,37 +107,49 @@ toc()
 println("Valuto l'efficienza dell'algoritmo ...")
 tic()
 totPrec = totRec = 0
+count = 0
 for u in users
-  #genero lista ordinata degli spettacoli in base ai ratings dati dall utente
-  ratings = vec(dense(URMT[u[2],:]))
-  orderedItems = sortperm(ratings, rev=true)
-  #genero lista ordinata delle raccomandazioni per l utente corrente
-  rec = get_recommendation(u[2], idTesting, programs, URM, C, M)
-  recvet = vec(full(rec))
-  orderedRec = sortperm(recvet, rev=true)
-  #limito i risultati ai top-N
-  if length(orderedItems) > N
-    orderedItems = orderedItems[1:N]
-    orderedRec = orderedRec[1:N]
+  #verifico che l utente abbia almeno un ratings
+  if length(nonzeros(URMT[u[2],:])) != 0
+    count += 1
+    #genero lista ordinata degli spettacoli in base ai ratings dati dall utente
+    ratings = vec(dense(URMT[u[2],:]))
+    orderedItems = sortperm(ratings, rev=true)
+    #genero lista ordinata delle raccomandazioni per l utente corrente
+    rec = get_recommendation(u[2], idTesting, programs, URM, C, M)
+    recvet = vec(full(rec))
+    orderedRec = sortperm(recvet, rev=true)
+    #limito i risultati ai top-N
+    if length(orderedItems) > N
+      orderedItems = orderedItems[1:N]
+      orderedRec = orderedRec[1:N]
+    end
+    #calcolo gli insiemi True Positive, False Positive e False Negative
+    #reference: http://www.kdnuggets.com/faq/precision-recall.html
+    TP = length(intersect(orderedItems, orderedRec))
+    FP = length(setdiff(orderedRec, orderedItems))
+    FN = length(setdiff(orderedItems, orderedRec))
+    #calcolo precision
+    #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
+    totPrec += TP / (TP + FP)
+    #calcolo recall
+    #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
+    totRec += TP / (TP + FN)
   end
-  #calcolo gli insiemi True Positive, False Positive e False Negative
-  #reference: http://www.kdnuggets.com/faq/precision-recall.html
-  TP = length(intersect(orderedItems, orderedRec))
-  FP = length(setdiff(orderedRec, orderedItems))
-  FN = length(setdiff(orderedItems, orderedRec))
-  #calcolo precision
-  #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
-  totPrec += TP / (TP + FP)
-  #calcolo recall
-  #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
-  totRec += TP / (TP + FN)
 end
 
 #normalizzo i calcoli della precision e recall
-len = length(users)
-endPrec = totPrec / len
-endRec = totRec / len
+endPrec = totPrec / count
+endRec = totRec / count
+toc()
+
+#stampo statistiche
+println("-----------------------------------------------------------------------------")
+println("Numero programmi di training: $(length(ids))")
+println("Numero programmi di testing: $(length(idTesting))")
+println("Numero di utenti: $(length(users))")
+println("Numero utenti di testing: $count")
 
 #Stampo Risultati
+println("-----------------------------------------------------------------------------")
 println("Precision@$N = $endPrec\nRecall@$N = $endRec")
-toc()
