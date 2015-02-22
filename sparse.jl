@@ -71,7 +71,7 @@ if length(programs) != length(ids) + length(idTesting)
 end
 
 #costruisco la URM
-println("Costruisco la URM di Training ...")
+println("Costruisco la User-Ratings Matrix ...")
 tic()
 URM = spzeros(length(users), length(programs))
 for r in ratings
@@ -88,7 +88,7 @@ toc()
 #calcolo la matrice C
 println("Calcolo la matrice C")
 tic()
-C = compute_item_item_similarity (dataset, [ids,idTesting])
+C = compute_item_item_similarity ([ids,idTesting], programs, genres)
 toc()
 
 #eseguo i calcoli per il gradiente che non devono essere rifatti ogni volta
@@ -106,7 +106,8 @@ println("Valuto l'efficienza dell'algoritmo ...")
 tic()
 test_number = length(N)
 user_number = length(users)
-precision = recall = zeros(test_number)
+precision = zeros(test_number)
+recall = zeros(test_number)
 for i = 1:test_number
   totPrec = totRec = 0
   for u in users
@@ -115,7 +116,6 @@ for i = 1:test_number
     for j = 1:length(idTesting)
        ratings[1,j] = URM[u[2], programs[idTesting[j]]]
     end
-    #ratings = vec(full(URM[u[2],:]))
     orderedItems = sortperm(vec(full(ratings)), rev=true)
     #genero lista ordinata delle raccomandazioni per l utente corrente
     rec = get_recommendation(users[u[1]], idTesting, programs, URM, C, M)

@@ -107,7 +107,8 @@ end
 #Restituisce la matrice di similarità rispetto ai contenuti di un certo set di programId
 function compute_item_item_similarity (ids::Array, programs::Dict, genres::Dict)
   id_number = length(ids)
-  C = spzeros(length(programs))
+  program_number = length(programs)
+  C = spzeros(program_number, program_number)
   for i = 1:id_number
     id1 = programs[ids[i]]
     for j = i:id_number
@@ -130,6 +131,7 @@ function gradient_descent (a::Number, MSize::Int, S::SparseMatrixCSC, C::SparseM
   M = Mnew = spzeros(MSize, MSize)
   fval = object(M, S, C)
   gain = 1
+  println("Start value = $fval")
   #calcolo la matrice M ottimale
   i = 1
   while fval > tol && gain > tol
@@ -145,6 +147,7 @@ function gradient_descent (a::Number, MSize::Int, S::SparseMatrixCSC, C::SparseM
     end
     i += 1
   end
+  println("End value = $fval")
   return M
 end
 
