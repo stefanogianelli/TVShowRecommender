@@ -4,17 +4,16 @@ function load_program_ids (filename::String)
   return int(unique(programInfo[:,2]))
 end
 
-function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings::Dict, testingRatings::Dict, users::Dict, testingUsers::Dict, programs::Dict)
+function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings::Dict, users::Dict, programs::Dict, genres::Dict)
   #inizializzo contattori
   countUser = 1
-  countTestUser = 1
   countProg = 1
   #scansiono tutto il dataset
   for i = 1:size(dataset)[1]
     #elimino le settimne 14 e 19
     if (dataset[i,3] != 14 && dataset[i,3] != 19)
       #controllo se l'id corrente è nell'insieme degli id di training
-      if (in(dataset[i,7], ids))
+      if (in(dataset[i,7], ids) || in(dataset[i,7], idTesting))
         try
           ratings[dataset[i,6], dataset[i,7]] += dataset[i,9]
         catch
@@ -30,22 +29,9 @@ function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings:
           programs[dataset[i,7]] = countProg
           countProg += 1
         end
-      #controllo se l'id corrente è nell'insieme degli id di testing
-      elseif (in(dataset[i,7], idTesting))
-        try
-          testingRatings[dataset[i,6], dataset[i,7]] += dataset[i,9]
-        catch
-          testingRatings[dataset[i,6], dataset[i,7]] = dataset[i,9]
-        end
-        #aggiungo l'utente corrente
-        if (!in(dataset[i,6], keys(testingUsers)))
-          testingUsers[dataset[i,6]] = countTestUser = 1
-          countTestUser += 1
-        end
-        #aggiungo il programma corrente
-        if (!in(dataset[i,7], keys(programs)))
-          programs[dataset[i,7]] = countProg
-          countProg += 1
+        #creo un dizionario con i generi e sottogeneri dei programmi
+        if (!in(dataset[i,7], keys(genres)))
+          genres[dataset[i,7]] = (dataset[i,4], dataset[i,5])
         end
       end
     end
@@ -55,9 +41,10 @@ end
 #Calcola la matrice di similarità tra item S
 function build_similarity_matrix (programs::Dict, ids::Array, URM::SparseMatrixCSC)
   lengthS = length(programs)
+  lengthId = length(ids)
   S = spzeros(lengthS, lengthS)
-  for i = 1:length(ids)
-    for j = i:length(ids)
+  for i = 1:lengthId
+    for j = i:lengthId
       p1 = programs[ids[i]]
       p2 = programs[ids[j]]
       if (i == j)
@@ -102,53 +89,36 @@ end
 
 #calcola la media dei ratings dati dall'utente n
 function user_average (userIndex::Int, URM::SparseMatrixCSC)
-  ratings = nonzeros(URM[userIndex,:])
-  size = length(ratings)
-  if size != 0
-    return sum(ratings) / size
+  ratings = 0
+  count = 0
+  for i = 1:length(ids)
+    if URM[userIndex, programs[ids[i]]] != 0
+      ratings += URM[userIndex, programs[ids[i]]]
+      count += 1
+    end
+  end
+  if count != 0
+    return ratings / count
   else
     return 0
   end
 end
 
 #Restituisce la matrice di similarità rispetto ai contenuti di un certo set di programId
-function compute_item_item_similarity (genreTable::Matrix, ids::Vector)
-  #considero solo le colonne: genreIdx, subGenreIdx, programIdx
-  genreTable = genreTable[:,[4,5,7]]
-
-  #Inizializzo matrice A = (programmi,genere+sottogenere)
-  idsSize = length(ids)
-  matrixA=ones( idsSize , 2 )
-
-  genreTableSize = size(genreTable)[1]
-  i = 1
-  while i <= idsSize
-    j=1
-    while j < genreTableSize && genreTable[j,3] != ids[i]
-      j += 1
-    end
-    matrixA[i,1]=genreTable[j,1]
-    matrixA[i,2]=genreTable[j,2]
-    i += 1
-  end
-
-  A_rows = size(matrixA)[1]
-  C = spzeros(A_rows,A_rows)
-  for i = 1:size(C)[1]
-    C[i,i] = 1
-  end
-  for i = 1:(A_rows-1)
-    for l = i+1:(A_rows)
-      k=0.0
-       if matrixA[i,1]==matrixA[l,1]!=1
-        k=0.5
-        if matrixA[i,2]==matrixA[l,2]!=1
-         k=1.0
+function compute_item_item_similarity (ids::Array, programs::Dict, genres::Dict)
+  id_number = length(ids)
+  C = spzeros(length(programs))
+  for i = 1:id_number
+    id1 = programs[ids[i]]
+    for j = i:id_number
+      id2 = programs[ids[j]]
+      if genres[ids[i]][1] == genres[ids[j]][1]
+        if genres[ids[i]][2] == genres[ids[j]][2]
+          C[id1,id2] = C[id2,id1] = 1
+        else
+          C[id1,id2] = C[id2,id1] = 0.5
         end
-       end
-      p1 = programs[ids[i]]
-      p2 = programs[ids[l]]
-      C[p1,p2]= C[p2,p1] = k
+      end
     end
   end
   return C
@@ -190,9 +160,10 @@ end
 
 #Restituisce gli spettacoli consigliati all'utente "user"
 function get_recommendation (userIndex::Int, idTesting::Array, programs::Dict, URM::SparseMatrixCSC, C::SparseMatrixCSC, M::SparseMatrixCSC)
-  ratings = spzeros(1, length(programs))
-  for prog in idTesting
-    progIndex = programs[prog]
+  test_items = length(idTesting)
+  ratings = spzeros(1, test_items)
+  for i = 1:test_items
+    progIndex = programs[idTesting[i]]
     p = get_tau(userIndex, progIndex, C, URM)
     num = 0
     den = 0
@@ -206,7 +177,7 @@ function get_recommendation (userIndex::Int, idTesting::Array, programs::Dict, U
     else
       res = 0
     end
-    ratings[1, progIndex] = res
+    ratings[1, i] = res
   end
   return ratings
 end

@@ -54,15 +54,15 @@ toc()
 #pulisco il dataset
 println("Pulisco il dataset ...")
 tic()
-#dizionari dei ratings (training => ratings, testing => testingRatings)
+#dizionari dei ratings (training => ratings)
 ratings = Dict()
-testingRatings = Dict()
 #dizionario degli utenti
 users = Dict()
-testingUsers = Dict()
 #dizionario dei programmi
 programs = Dict()
-clean_dataset!(dataset, ids, idTesting, ratings, testingRatings, users, testingUsers, programs)
+#dizionario dei generi
+genres = Dict()
+clean_dataset!(dataset, ids, idTesting, ratings, users, programs, genres)
 toc()
 
 #mostro un avviso nel caso ci siano discrepanze tra il numero di programmi trovati
@@ -70,26 +70,12 @@ if length(programs) != length(ids) + length(idTesting)
   println("ATTENZIONE: nel dataset non sono stati trovati tutti gli id dei programmi!")
 end
 
-#mostro un avviso nel caso non esistano utenti in comune tra training e testing
-if length(intersect(keys(users), keys(testingUsers))) == 0
-  println("ATTENZIONE: non esistono utenti confrontabili!")
-end
-
-#costruisco la URM di training
+#costruisco la URM
 println("Costruisco la URM di Training ...")
 tic()
 URM = spzeros(length(users), length(programs))
 for r in ratings
   URM[users[r[1][1]], programs[r[1][2]]] = r[2]
-end
-toc()
-
-#costruisco la URM di testing
-println("Costruisco la URM di Testing ...")
-tic()
-URMT = spzeros(length(testingUsers), length(programs))
-for r in testingRatings
-  URMT[testingUsers[r[1][1]], programs[r[1][2]]] = r[2]
 end
 toc()
 
@@ -119,42 +105,42 @@ toc()
 println("Valuto l'efficienza dell'algoritmo ...")
 tic()
 test_number = length(N)
+user_number = length(users)
 precision = recall = zeros(test_number)
 for i = 1:test_number
   totPrec = totRec = 0
-  count = 0
-  for u in testingUsers
-    #verifico che l'utente esista nella lista degli utenti di training
-    if in(u[1], keys(users))
-      count += 1
-      #genero lista ordinata degli spettacoli in base ai ratings dati dall utente
-      ratings = vec(dense(URMT[u[2],:]))
-      orderedItems = sortperm(ratings, rev=true)
-      #genero lista ordinata delle raccomandazioni per l utente corrente
-      rec = get_recommendation(users[u[1]], idTesting, programs, URM, C, M)
-      recvet = vec(full(rec))
-      orderedRec = sortperm(recvet, rev=true)
-      #limito i risultati ai top-N
-      if length(orderedRec) > N[i]
-        orderedRec = orderedRec[1:N[i]]
-      end
-      #calcolo gli insiemi True Positive, False Positive e False Negative
-      #reference: http://www.kdnuggets.com/faq/precision-recall.html
-      TP = length(intersect(orderedItems, orderedRec))
-      FP = length(setdiff(orderedRec, orderedItems))
-      FN = length(setdiff(orderedItems, orderedRec))
-      #calcolo precision
-      #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
-      totPrec += TP / (TP + FP)
-      #calcolo recall
-      #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
-      totRec += TP / (TP + FN)
+  for u in users
+    #genero lista ordinata degli spettacoli in base ai ratings dati dall utente
+    ratings = spzeros(1, length(idTesting))
+    for j = 1:length(idTesting)
+       ratings[1,j] = URM[u[2], programs[idTesting[j]]]
     end
+    #ratings = vec(full(URM[u[2],:]))
+    orderedItems = sortperm(vec(full(ratings)), rev=true)
+    #genero lista ordinata delle raccomandazioni per l utente corrente
+    rec = get_recommendation(users[u[1]], idTesting, programs, URM, C, M)
+    recvet = vec(full(rec))
+    orderedRec = sortperm(recvet, rev=true)
+    #limito i risultati ai top-N
+    if length(orderedRec) > N[i]
+      orderedRec = orderedRec[1:N[i]]
+    end
+    #calcolo gli insiemi True Positive, False Positive e False Negative
+    #reference: http://www.kdnuggets.com/faq/precision-recall.html
+    TP = length(intersect(orderedItems, orderedRec))
+    FP = length(setdiff(orderedRec, orderedItems))
+    FN = length(setdiff(orderedItems, orderedRec))
+    #calcolo precision
+    #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
+    totPrec += TP / (TP + FP)
+    #calcolo recall
+    #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
+    totRec += TP / (TP + FN)
   end
 
   #normalizzo i calcoli della precision e recall
-  precision[i] = totPrec / count
-  recall[i] = totRec / count
+  precision[i] = totPrec / user_number
+  recall[i] = totRec / user_number
 end
 toc()
 
@@ -162,8 +148,7 @@ toc()
 println("-----------------------------------------------------------------------------")
 println("Numero programmi di training: $(length(ids))")
 println("Numero programmi di testing: $(length(idTesting))")
-println("Numero di utenti: $(length(users))")
-println("Numero utenti di testing: $(length(testingUsers))")
+println("Numero di utenti: $user_number")
 
 #Stampo Risultati
 println("-----------------------------------------------------------------------------")
