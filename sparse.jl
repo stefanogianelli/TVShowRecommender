@@ -31,18 +31,18 @@ MAIN
 #ricavo il percorso base da cui caricare i dataset
 cd(dirname(@__FILE__))
 
-#carico la matrice con le informazioni sui programmi di training
-println("Carico gli id dei programmi di training")
-tic()
-ids = load_program_ids(trainingPath)
-toc()
-
 #carico la matrice con le informazioni sui programmi di testing
 println("Carico gli id dei programmi di testing")
 tic()
 idTesting = load_program_ids(testingPath)
-#rimuovo i programId che sono già presenti in quelli di training
-idTesting = setdiff(idTesting, intersect(idTesting, ids))
+toc()
+
+#carico la matrice con le informazioni sui programmi di training
+println("Carico gli id dei programmi di training")
+tic()
+ids = load_program_ids(trainingPath)
+#rimuovo i programId che sono già presenti in quelli di testing
+ids = setdiff(ids, intersect(idTesting, ids))
 toc()
 
 #carico il dataset
