@@ -135,8 +135,7 @@ for i = 1:test_number
       recvet = vec(full(rec))
       orderedRec = sortperm(recvet, rev=true)
       #limito i risultati ai top-N
-      if length(orderedItems) > N[i]
-        orderedItems = orderedItems[1:N[i]]
+      if length(orderedRec) > N[i]
         orderedRec = orderedRec[1:N[i]]
       end
       #calcolo gli insiemi True Positive, False Positive e False Negative
