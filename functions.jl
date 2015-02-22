@@ -163,7 +163,7 @@ function gradient_descent (a::Number, MSize::Int, S::SparseMatrixCSC, C::SparseM
   #calcolo la matrice M ottimale
   i = 1
   while fval > tol && gain > tol
-    Mnew = M - (a / size(M)[1]) * grad(M, T, Q)
+    Mnew = M - (a / MSize) * grad(M, T, Q)
     f = object(Mnew, S, C)
     if f <= fval
       gain = abs(fval - f)
