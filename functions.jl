@@ -38,6 +38,46 @@ function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings:
   end
 end
 
+#funzione di test
+function clean_dataset1! (datasetPath::String, ids::Array, idTesting::Array, ratings::Dict, users::Dict, programs::Dict, genres::Dict)
+  #inizializzo contattori
+  countUser = 1
+  countProg = 1
+  #scansiono tutto il dataset
+  file = open(datasetPath)
+  for line in eachline(file)
+    #leggo la riga corrente
+    dataset = int(split(line, ","))
+    #elimino le settimne 14 e 19
+    if (dataset[3] != 14 && dataset[3] != 19)
+      #controllo se l'id corrente è nell'insieme degli id di training
+      if (in(dataset[7], ids) || in(dataset[7], idTesting))
+        try
+          ratings[dataset[6], dataset[7]] += dataset[9]
+        catch
+          ratings[dataset[6], dataset[7]] = dataset[9]
+        end
+        #aggiungo l'utente corrente
+        if (!in(dataset[6], keys(users)))
+          users[dataset[6]] = countUser
+          countUser += 1
+        end
+        #aggiungo il programma corrente
+        if (!in(dataset[7], keys(programs)))
+          programs[dataset[7]] = countProg
+          countProg += 1
+        end
+        #creo un dizionario con i generi e sottogeneri dei programmi
+        if (!in(dataset[7], keys(genres)))
+          genres[dataset[7]] = (dataset[4], dataset[5])
+        end
+      end
+    end
+  end
+  flush(file)
+  close(file)
+end
+
 #Calcola la matrice di similarità tra item S
 function build_similarity_matrix (programs::Dict, ids::Array, URM::SparseMatrixCSC)
   lengthS = length(programs)
