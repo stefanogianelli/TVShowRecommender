@@ -4,7 +4,8 @@ function load_program_ids (filename::String)
   return int(unique(programInfo[:,2]))
 end
 
-function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings::Dict, users::Dict, programs::Dict, genres::Dict)
+#funzione di test
+function clean_dataset1! (dataset::Matrix, ids::Array, idTesting::Array, ratings::Dict, users::Dict, programs::Dict, genres::Dict)
   #inizializzo contattori
   countUser = 1
   countProg = 1
@@ -38,8 +39,8 @@ function clean_dataset! (dataset::Matrix, ids::Array, idTesting::Array, ratings:
   end
 end
 
-#funzione di test
-function clean_dataset1! (datasetPath::String, ids::Array, idTesting::Array, ratings::Dict, users::Dict, programs::Dict, genres::Dict)
+#leggo il dataset e carica i dati necessari all elaborazione
+function clean_dataset! (datasetPath::String, ids::Array, idTesting::Array, ratings::Dict, users::Dict, programs::Dict, genres::Dict)
   #inizializzo contattori
   countUser = 1
   countProg = 1

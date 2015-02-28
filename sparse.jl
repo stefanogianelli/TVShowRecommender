@@ -45,14 +45,8 @@ ids = load_program_ids(trainingPath)
 ids = setdiff(ids, intersect(idTesting, ids))
 toc()
 
-#carico il dataset
-println("Carico il dataset ...")
-tic()
-dataset = int(readdlm(datasetPath, ',', use_mmap=true))
-toc()
-
-#pulisco il dataset
-println("Pulisco il dataset ...")
+#carico e pulisco il dataset
+println("Carico e pulisco il dataset ...")
 tic()
 #dizionari dei ratings (training => ratings)
 ratings = Dict()
@@ -62,7 +56,7 @@ users = Dict()
 programs = Dict()
 #dizionario dei generi
 genres = Dict()
-clean_dataset!(dataset, ids, idTesting, ratings, users, programs, genres)
+clean_dataset!(datasetPath, ids, idTesting, ratings, users, programs, genres)
 toc()
 
 #mostro un avviso nel caso ci siano discrepanze tra il numero di programmi trovati
