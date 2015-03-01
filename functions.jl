@@ -4,41 +4,6 @@ function load_program_ids (filename::String)
   return int(unique(programInfo[:,2]))
 end
 
-#funzione di test
-function clean_dataset1! (dataset::Matrix, ids::Array, idTesting::Array, ratings::Dict, users::Dict, programs::Dict, genres::Dict)
-  #inizializzo contattori
-  countUser = 1
-  countProg = 1
-  #scansiono tutto il dataset
-  for i = 1:size(dataset)[1]
-    #elimino le settimne 14 e 19
-    if (dataset[i,3] != 14 && dataset[i,3] != 19)
-      #controllo se l'id corrente è nell'insieme degli id di training
-      if (in(dataset[i,7], ids) || in(dataset[i,7], idTesting))
-        try
-          ratings[dataset[i,6], dataset[i,7]] += dataset[i,9]
-        catch
-          ratings[dataset[i,6], dataset[i,7]] = dataset[i,9]
-        end
-        #aggiungo l'utente corrente
-        if (!in(dataset[i,6], keys(users)))
-          users[dataset[i,6]] = countUser
-          countUser += 1
-        end
-        #aggiungo il programma corrente
-        if (!in(dataset[i,7], keys(programs)))
-          programs[dataset[i,7]] = countProg
-          countProg += 1
-        end
-        #creo un dizionario con i generi e sottogeneri dei programmi
-        if (!in(dataset[i,7], keys(genres)))
-          genres[dataset[i,7]] = (dataset[i,4], dataset[i,5])
-        end
-      end
-    end
-  end
-end
-
 #leggo il dataset e carica i dati necessari all elaborazione
 function clean_dataset! (datasetPath::String, ids::Array, idTesting::Array, ratings::Dict, users::Dict, programs::Dict, genres::Dict)
   #inizializzo contattori
