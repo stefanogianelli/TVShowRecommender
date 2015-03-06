@@ -48,7 +48,7 @@ toc()
 #carico e pulisco il dataset
 println("Carico e pulisco il dataset ...")
 tic()
-#dizionari dei ratings (training => ratings)
+#dizionari dei ratings
 ratings = Dict()
 #dizionario degli utenti
 users = Dict()

@@ -47,17 +47,16 @@ end
 #Calcola la matrice di similarità tra item S
 function build_similarity_matrix (programs::Dict, ids::Array, URM::SparseMatrixCSC)
   lengthS = length(programs)
-  lengthId = length(ids)
   S = spzeros(lengthS, lengthS)
-  for i = 1:lengthId
-    for j = i:lengthId
-      p1 = programs[ids[i]]
-      p2 = programs[ids[j]]
-      if (i == j)
+  for prog1 in ids
+    for prog2 in ids
+      p1 = programs[prog1]
+      p2 = programs[prog2]
+      if (p1 == p2)
         S[p1, p2] = 1
       else
         #sfrutto la simmetria della matrice S per il calcolo della similarità
-        S[p1, p2] = S[p2, p1] = cosine_similarity(p1, p2, URM)
+        S[p1, p2] = S[p2, p1] = cosine_similarity(p1, p2, URM, ids)
       end
     end
   end
@@ -65,7 +64,7 @@ function build_similarity_matrix (programs::Dict, ids::Array, URM::SparseMatrixC
 end
 
 #calcola la cosine similarity tra due vettori
-function cosine_similarity (i1::Int, i2::Int, URM::SparseMatrixCSC)
+function cosine_similarity (i1::Int, i2::Int, URM::SparseMatrixCSC, ids::Array)
   a = URM[:,i1]
   b = URM[:,i2]
   #cerco gli utenti che hanno dato un voto ad entrambi i programmi
@@ -79,7 +78,7 @@ function cosine_similarity (i1::Int, i2::Int, URM::SparseMatrixCSC)
   #eseguo tutti i conti in un unico ciclo
   for n in indexes
     #calcolo la media dei rating dati dall'utente corrente
-    avg = user_average(n, URM)
+    avg = user_average(n, URM, ids)
     num += (a[n] - avg)*(b[n] - avg)
     den1 += (a[n] - avg)^2
     den2 += (b[n] - avg)^2
@@ -94,12 +93,13 @@ function cosine_similarity (i1::Int, i2::Int, URM::SparseMatrixCSC)
 end
 
 #calcola la media dei ratings dati dall'utente n
-function user_average (userIndex::Int, URM::SparseMatrixCSC)
+function user_average (userIndex::Int, URM::SparseMatrixCSC, ids::Array)
   ratings = 0
   count = 0
-  for i = 1:length(ids)
-    if URM[userIndex, programs[ids[i]]] != 0
-      ratings += URM[userIndex, programs[ids[i]]]
+  for p in ids
+    index = programs[p]
+    if URM[userIndex, index] != 0
+      ratings += URM[userIndex, index]
       count += 1
     end
   end
