@@ -105,16 +105,15 @@ recall = zeros(test_number)
 for i = 1:test_number
   totPrec = totRec = 0
   for u in users
-    #genero lista ordinata degli spettacoli in base ai ratings dati dall utente
-    ratings = spzeros(1, length(idTesting))
-    for j = 1:length(idTesting)
-       ratings[1,j] = URM[u[2], programs[idTesting[j]]]
+    #genero lista ordinata degli spettacoli in base ai ratings dati dall'utente
+    items = Float64[]
+    for p in idTesting
+      push!(items, URM[u[2], programs[p]])
     end
-    orderedItems = sortperm(vec(full(ratings)), rev=true)
-    #genero lista ordinata delle raccomandazioni per l utente corrente
+    orderedItems = sortperm(items, rev=true)
+    #genero lista ordinata delle raccomandazioni per l'utente corrente
     rec = get_recommendation(users[u[1]], idTesting, programs, URM, C, M)
-    recvet = vec(full(rec))
-    orderedRec = sortperm(recvet, rev=true)
+    orderedRec = sortperm(rec, rev=true)
     #limito i risultati ai top-N
     if length(orderedRec) > N[i]
       orderedRec = orderedRec[1:N[i]]

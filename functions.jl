@@ -169,10 +169,9 @@ end
 
 #Restituisce gli spettacoli consigliati all'utente "user"
 function get_recommendation (userIndex::Int, idTesting::Array, programs::Dict, URM::SparseMatrixCSC, C::SparseMatrixCSC, M::SparseMatrixCSC)
-  test_items = length(idTesting)
-  ratings = spzeros(1, test_items)
-  for i = 1:test_items
-    progIndex = programs[idTesting[i]]
+  ratings = Float64[]
+  for prog in idTesting
+    progIndex = programs[prog]
     p = get_tau(userIndex, progIndex, C, URM)
     num = 0
     den = 0
@@ -186,7 +185,7 @@ function get_recommendation (userIndex::Int, idTesting::Array, programs::Dict, U
     else
       res = 0
     end
-    ratings[1, i] = res
+    push!(ratings, res)
   end
   return ratings
 end
@@ -195,7 +194,7 @@ end
 function get_tau (userIndex::Int, futureIndex::Int, C::SparseMatrixCSC, URM::SparseMatrixCSC)
   set = transpose(C[futureIndex,:])
   userRated = transpose(URM[userIndex,:])
-  intersect(rowvals(set), rowvals(userRated))
+  setdiff(intersect(rowvals(set), rowvals(userRated)), futureIndex)
 end
 
 #Calcola la similarità tra uno spettacolo passato ed uno futuro
