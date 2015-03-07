@@ -64,8 +64,15 @@ if length(programs) != length(ids) + length(idTesting)
   println("ATTENZIONE: nel dataset non sono stati trovati tutti gli id dei programmi!")
 end
 
+#stampo statistiche
+println("-----------------------------------------------------------------------------")
+println("Numero programmi di training: $(length(ids))")
+println("Numero programmi di testing: $(length(idTesting))")
+println("Numero di utenti: $(length(users))")
+println("-----------------------------------------------------------------------------")
+
 #costruisco la URM
-println("Costruisco la User-Ratings Matrix ...")
+println("Costruisco la User-Rating Matrix ...")
 tic()
 URM = spzeros(length(users), length(programs))
 for r in ratings
@@ -137,14 +144,10 @@ for i = 1:test_number
 end
 toc()
 
-#stampo statistiche
-println("-----------------------------------------------------------------------------")
-println("Numero programmi di training: $(length(ids))")
-println("Numero programmi di testing: $(length(idTesting))")
-println("Numero di utenti: $user_number")
-
 #Stampo Risultati
 println("-----------------------------------------------------------------------------")
+println("Evaluation Results")
 for i = 1:test_number
   println("Precision@$(N[i]) = $(precision[i])\nRecall@$(N[i]) = $(recall[i])")
 end
+println("-----------------------------------------------------------------------------")
