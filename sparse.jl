@@ -111,6 +111,7 @@ test_number = length(N)
 precision = zeros(test_number)
 recall = zeros(test_number)
 for i = 1:test_number
+  println("Test #$i @ $(N[i]) ...")
   #inizializzo variabili
   max_rating = -Inf
   totPrec = totRec = 0
