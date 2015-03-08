@@ -116,79 +116,87 @@ test_number = length(N)
 user_number = length(test_users)
 precision = zeros(test_number)
 recall = zeros(test_number)
+stop = false
 for i = 1:test_number
-  println("Test #$i @ $(N[i]) ...")
-  #inizializzo variabili
-  max_rating = -Inf
-  totPrec = totRec = 0
-  #esegue il calcolo per tutti gli utenti
-  for u in test_users
-    #genero lista degli spettacoli in base ai ratings dati dall'utente (dalla URM)
-    items = Dict()
-    for p in idTesting
-      val = URM[users[u], programs[p]]
-      items[p] = val
-      if val > max_rating
-        max_rating = val
+  #non ripeto il test se non necessario
+  if !stop
+    println("Test #$i @ $(N[i]) ...")
+    #inizializzo variabili
+    max_rating = -Inf
+    totPrec = totRec = 0
+    #esegue il calcolo per tutti gli utenti
+    for u in test_users
+      #genero lista degli spettacoli in base ai ratings dati dall'utente (dalla URM)
+      items = Dict()
+      for p in idTesting
+        val = URM[users[u], programs[p]]
+        items[p] = val
+        if val > max_rating
+          max_rating = val
+        end
+      end
+      #genero lista delle raccomandazioni per l'utente corrente
+      rec_vec = get_recommendation(users[u], idTesting, programs, URM, C, M)
+      ordered_rec = sortperm(rec_vec, rev=true)
+      #limito i risultati ai top-N
+      rec_size = min(length(rec_vec), N[i])
+      #imposto blocco nel caso il vettore sia più corto della N corrente
+      if rec_size == length(rec_vec)
+        stop = true
+      end
+      rec = Dict()
+      for j = 1:rec_size
+        index = ordered_rec[j]
+        rec[idTesting[index]] = rec_vec[index]
+        if rec_vec[index] > max_rating
+          max_rating = rec_vec[index]
+        end
+      end
+      #creo una soglia di rilevanza
+      threshold = max_rating * relevant_threshold
+      #creo insiemi di elementi rilevanti
+      cond_positive = Int64[]
+      cond_negative = Int64[]
+      for k in keys(items)
+        if items[k] >= threshold
+          push!(cond_positive, k)
+        else
+          push!(cond_negative, k)
+        end
+      end
+      #creo insiemi di raccomandazioni rilevanti
+      test_positive = Int64[]
+      test_negative = Int64[]
+      for k in keys(rec)
+        if rec[k] >= threshold
+          push!(test_positive, k)
+        else
+          push!(test_negative, k)
+        end
+      end
+      #calcolo gli insiemi True Positive, False Positive e False Negative
+      #reference: http://www.kdnuggets.com/faq/precision-recall.html
+      TP = length(intersect(cond_positive, test_positive))
+      FP = length(intersect(cond_negative, test_positive))
+      FN = length(intersect(cond_positive, test_negative))
+      PPV = TP + FP
+      TPR = TP + FN
+      #calcolo precision
+      #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
+      if PPV != 0
+        totPrec += TP / PPV
+      end
+      #calcolo recall
+      #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
+      if TPR != 0
+        totRec += TP / TPR
       end
     end
-    #genero lista delle raccomandazioni per l'utente corrente
-    rec_vec = get_recommendation(users[u], idTesting, programs, URM, C, M)
-    ordered_rec = sortperm(rec_vec, rev=true)
-    #limito i risultati ai top-N
-    rec_size = min(length(rec_vec), N[i])
-    rec = Dict()
-    for j = 1:rec_size
-      index = ordered_rec[j]
-      rec[idTesting[index]] = rec_vec[index]
-      if rec_vec[index] > max_rating
-        max_rating = rec_vec[index]
-      end
-    end
-    #creo una soglia di rilevanza
-    threshold = max_rating * relevant_threshold
-    #creo insiemi di elementi rilevanti
-    cond_positive = Int64[]
-    cond_negative = Int64[]
-    for k in keys(items)
-      if items[k] >= threshold
-        push!(cond_positive, k)
-      else
-        push!(cond_negative, k)
-      end
-    end
-    #creo insiemi di raccomandazioni rilevanti
-    test_positive = Int64[]
-    test_negative = Int64[]
-    for k in keys(rec)
-      if rec[k] >= threshold
-        push!(test_positive, k)
-      else
-        push!(test_negative, k)
-      end
-    end
-    #calcolo gli insiemi True Positive, False Positive e False Negative
-    #reference: http://www.kdnuggets.com/faq/precision-recall.html
-    TP = length(intersect(cond_positive, test_positive))
-    FP = length(intersect(cond_negative, test_positive))
-    FN = length(intersect(cond_positive, test_negative))
-    PPV = TP + FP
-    TPR = TP + FN
-    #calcolo precision
-    #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
-    if PPV != 0
-      totPrec += TP / PPV
-    end
-    #calcolo recall
-    #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
-    if TPR != 0
-      totRec += TP / TPR
-    end
-  end
 
-  #normalizzo i calcoli della precision e recall
-  precision[i] = totPrec / user_number
-  recall[i] = totRec / user_number
+    #normalizzo i calcoli della precision e recall
+    precision[i] = totPrec / user_number
+    recall[i] = totRec / user_number
+  end
 end
 toc()
 
