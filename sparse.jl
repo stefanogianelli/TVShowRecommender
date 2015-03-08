@@ -130,7 +130,7 @@ for i = 1:test_number
       end
     end
     #genero lista delle raccomandazioni per l'utente corrente
-    rec_vec = get_recommendation(users[u[1]], idTesting, programs, URM, C, M)
+    rec_vec = get_recommendation(users[u], idTesting, programs, URM, C, M)
     ordered_rec = sortperm(rec_vec, rev=true)
     #limito i risultati ai top-N
     rec_size = min(length(rec_vec), N[i])
