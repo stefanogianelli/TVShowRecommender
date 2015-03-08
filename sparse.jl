@@ -23,6 +23,8 @@ alpha = 0.001
 deltaAlpha = 5
 #numero item simili
 N = [1, 5, 10, 20, 30, 40, 50]
+#soglia affinchè un rating sia considerato rilevante
+relevant_threshold = 0.6
 
 #=
 MAIN
@@ -106,36 +108,84 @@ toc()
 println("Valuto l'efficienza dell'algoritmo ...")
 tic()
 test_number = length(N)
-user_number = length(users)
 precision = zeros(test_number)
 recall = zeros(test_number)
 for i = 1:test_number
+  #inizializzo variabili
+  max_rating = -Inf
   totPrec = totRec = 0
+  user_number = 0
+  #esegue il calcolo per tutti gli utenti
   for u in users
-    #genero lista ordinata degli spettacoli in base ai ratings dati dall'utente
-    items = Float64[]
+    #genero lista degli spettacoli in base ai ratings dati dall'utente (dalla URM)
+    check = false
+    items = Dict()
     for p in idTesting
-      push!(items, URM[u[2], programs[p]])
+      val = URM[u[2], programs[p]]
+      if val != 0
+        check = true
+      end
+      items[p] = val
+      if val > max_rating
+        max_rating = val
+      end
     end
-    orderedItems = sortperm(items, rev=true)
-    #genero lista ordinata delle raccomandazioni per l'utente corrente
-    rec = get_recommendation(users[u[1]], idTesting, programs, URM, C, M)
-    orderedRec = sortperm(rec, rev=true)
-    #limito i risultati ai top-N
-    if length(orderedRec) > N[i]
-      orderedRec = orderedRec[1:N[i]]
+    #continuo solo nel caso in cui l'utente abbia dato almeno un rating ad un programma di test
+    if check
+      user_number += 1
+      #genero lista delle raccomandazioni per l'utente corrente
+      rec_vec = get_recommendation(users[u[1]], idTesting, programs, URM, C, M)
+      ordered_rec = sortperm(rec_vec, rev=true)
+      #limito i risultati ai top-N
+      rec_size = min(length(rec_vec), N[i])
+      rec = Dict()
+      for j = 1:rec_size
+        index = ordered_rec[j]
+        rec[idTesting[index]] = rec_vec[index]
+        if rec_vec[index] > max_rating
+          max_rating = rec_vec[index]
+        end
+      end
+      #creo una soglia di rilevanza
+      threshold = max_rating * relevant_threshold
+      #creo insiemi di elementi rilevanti
+      cond_positive = Int64[]
+      cond_negative = Int64[]
+      for k in keys(items)
+        if items[k] >= threshold
+          push!(cond_positive, k)
+        else
+          push!(cond_negative, k)
+        end
+      end
+      #creo insiemi di raccomandazioni rilevanti
+      test_positive = Int64[]
+      test_negative = Int64[]
+      for k in keys(rec)
+        if rec[k] >= threshold
+          push!(test_positive, k)
+        else
+          push!(test_negative, k)
+        end
+      end
+      #calcolo gli insiemi True Positive, False Positive e False Negative
+      #reference: http://www.kdnuggets.com/faq/precision-recall.html
+      TP = length(intersect(cond_positive, test_positive))
+      FP = length(intersect(cond_negative, test_positive))
+      FN = length(intersect(cond_positive, test_negative))
+      PPV = TP + FP
+      TPR = TP + FN
+      #calcolo precision
+      #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
+      if PPV != 0
+        totPrec += TP / PPV
+      end
+      #calcolo recall
+      #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
+      if TPR != 0
+        totRec += TP / TPR
+      end
     end
-    #calcolo gli insiemi True Positive, False Positive e False Negative
-    #reference: http://www.kdnuggets.com/faq/precision-recall.html
-    TP = length(intersect(orderedItems, orderedRec))
-    FP = length(setdiff(orderedRec, orderedItems))
-    FN = length(setdiff(orderedItems, orderedRec))
-    #calcolo precision
-    #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
-    totPrec += TP / (TP + FP)
-    #calcolo recall
-    #reference: http://en.wikipedia.org/wiki/Precision_and_recall#Definition_.28classification_context.29
-    totRec += TP / (TP + FN)
   end
 
   #normalizzo i calcoli della precision e recall
