@@ -65,7 +65,9 @@ toc()
 #mostro un avviso nel caso ci siano discrepanze tra il numero di programmi trovati
 if length(programs) != length(ids) + length(idTesting)
   println("ATTENZIONE: nel dataset non sono stati trovati tutti gli id dei programmi! Correggo il problema ...")
-
+  ids = intersect(ids, keys(programs))
+  idTesting = intersect(idTesting, keys(programs))
+  println("Problema risolto!")
 end
 
 #stampo statistiche
