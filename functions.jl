@@ -5,7 +5,7 @@ function load_program_ids (filename::String)
 end
 
 #leggo il dataset e carica i dati necessari all elaborazione
-function clean_dataset! (datasetPath::String, ids::Array, idTesting::Array, ratings::Dict, users::Dict, programs::Dict, genres::Dict)
+function clean_dataset! (datasetPath::String, ids::Array, idTesting::Array, ratings::Dict, users::Dict, test_users::Array, programs::Dict, genres::Dict)
   #inizializzo contattori
   countUser = 1
   countProg = 1
@@ -15,26 +15,30 @@ function clean_dataset! (datasetPath::String, ids::Array, idTesting::Array, rati
     #leggo la riga corrente
     dataset = int(split(line, ","))
     #elimino le settimne 14 e 19
-    if (dataset[3] != 14 && dataset[3] != 19)
+    if dataset[3] != 14 && dataset[3] != 19
       #controllo se l'id corrente è nell'insieme degli id di training
-      if (in(dataset[7], ids) || in(dataset[7], idTesting))
+      if in(dataset[7], ids) || in(dataset[7], idTesting)
         try
           ratings[dataset[6], dataset[7]] += dataset[9]
         catch
           ratings[dataset[6], dataset[7]] = dataset[9]
         end
         #aggiungo l'utente corrente
-        if (!in(dataset[6], keys(users)))
+        if !in(dataset[6], keys(users))
           users[dataset[6]] = countUser
           countUser += 1
         end
+        #aggiungo l'utente nell'insieme di test
+        if in(dataset[7], idTesting) && !in(dataset[6], test_users)
+          push!(test_users, dataset[6])
+        end
         #aggiungo il programma corrente
-        if (!in(dataset[7], keys(programs)))
+        if !in(dataset[7], keys(programs))
           programs[dataset[7]] = countProg
           countProg += 1
         end
         #creo un dizionario con i generi e sottogeneri dei programmi
-        if (!in(dataset[7], keys(genres)))
+        if !in(dataset[7], keys(genres))
           genres[dataset[7]] = (dataset[4], dataset[5])
         end
       end
