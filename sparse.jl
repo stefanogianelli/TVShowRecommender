@@ -22,9 +22,9 @@ alpha = 0.001
 #incremento percentuale del learning rate (SGD)
 deltaAlpha = 5
 #numero item simili
-N = [1, 5, 10, 20, 30, 40, 50]
+N = [1, 5, 10, 20]
 #soglia affinchè un rating sia considerato rilevante
-relevant_threshold = 0.6
+relevant_threshold = 0.4
 
 #=
 MAIN
@@ -78,12 +78,25 @@ println("Numero di utenti: $(length(users))")
 println("Numero di utenti di test: $(length(test_users))")
 println("-----------------------------------------------------------------------------")
 
-#costruisco la URM
-println("Costruisco la User-Rating Matrix ...")
+#costruisco la URM di training
+println("Costruisco la User-Rating Matrix di training ...")
 tic()
 URM = spzeros(length(users), length(programs))
 for r in ratings
-  URM[users[r[1][1]], programs[r[1][2]]] = r[2]
+  if in(r[1][2], ids)
+    URM[users[r[1][1]], programs[r[1][2]]] = r[2]
+  end
+end
+toc()
+
+#costruisco la URM di testing
+println("Costruisco la User-Rating Matrix di testing ...")
+tic()
+URM_Test = spzeros(length(users), length(programs))
+for r in ratings
+  if in(r[1][2], idTesting)
+    URM_Test[users[r[1][1]], programs[r[1][2]]] = r[2]
+  end
 end
 toc()
 
@@ -129,7 +142,7 @@ for i = 1:test_number
       #genero lista degli spettacoli in base ai ratings dati dall'utente (dalla URM)
       items = Dict()
       for p in idTesting
-        val = URM[users[u], programs[p]]
+        val = URM_Test[users[u], programs[p]]
         items[p] = val
         if val > max_rating
           max_rating = val
