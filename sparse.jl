@@ -5,8 +5,8 @@ PARAMETRI
 =#
 
 #permette di scegliere la cartella
-dir = ".\\dataset"
-#dir = "C:\\Users\\Stefano\\Desktop\\tvshow"
+#dir = ".\\dataset"
+dir = "C:\\Users\\Stefano\\Desktop\\tvshow"
 #percorso dati di training
 trainingPath = "$dir\\training.txt"
 #percorso dati di testing
@@ -14,7 +14,7 @@ testingPath = "$dir\\testing.txt"
 #percorso dataset
 datasetPath = "$dir\\data.txt"
 #tolleranza (SGD)
-tol = 1e-8
+tol = 1e-5
 #numero massimo iterazioni (SGD)
 miter = 1000
 #dimensione passo (SGD)
@@ -24,7 +24,7 @@ deltaAlpha = 5
 #numero item simili
 N = [1, 5, 10, 20]
 #soglia affinchè un rating sia considerato rilevante
-relevant_threshold = 0.4
+relevant_threshold = 0.6
 
 #=
 MAIN
@@ -135,7 +135,8 @@ for i = 1:test_number
   if !stop
     println("Test #$i @ $(N[i]) ...")
     #inizializzo variabili
-    max_rating = -Inf
+    avg_rating = 0
+    count_ratings = 0
     totPrec = totRec = 0
     #esegue il calcolo per tutti gli utenti
     for u in test_users
@@ -144,9 +145,8 @@ for i = 1:test_number
       for p in idTesting
         val = URM_Test[users[u], programs[p]]
         items[p] = val
-        if val > max_rating
-          max_rating = val
-        end
+        avg_rating += val
+        count_ratings += 1
       end
       #genero lista delle raccomandazioni per l'utente corrente
       rec_vec = get_recommendation(users[u], idTesting, programs, URM, C, M)
@@ -161,12 +161,12 @@ for i = 1:test_number
       for j = 1:rec_size
         index = ordered_rec[j]
         rec[idTesting[index]] = rec_vec[index]
-        if rec_vec[index] > max_rating
-          max_rating = rec_vec[index]
-        end
+        avg_rating += rec_vec[index]
+        count_ratings += 1
       end
       #creo una soglia di rilevanza
-      threshold = max_rating * relevant_threshold
+      avg_rating /= count_ratings
+      threshold = avg_rating * relevant_threshold
       #creo insiemi di elementi rilevanti
       cond_positive = Int64[]
       cond_negative = Int64[]
