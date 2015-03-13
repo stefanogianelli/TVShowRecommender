@@ -1,5 +1,5 @@
 cd(dirname(@__FILE__))
-dir = "C:\\Users\\Stefano\\Desktop\\tvshow1"
+dir = ".\\dataset"
 #input
 path = "$dir\\list.txt"
 #output

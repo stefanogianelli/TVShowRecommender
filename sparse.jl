@@ -6,7 +6,6 @@ PARAMETRI
 
 #permette di scegliere la cartella
 dir = ".\\dataset"
-#dir = "C:\\Users\\Stefano\\Desktop\\tvshow"
 #percorso dati di training
 trainingPath = "$dir\\training.txt"
 #percorso dati di testing
