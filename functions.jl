@@ -125,12 +125,12 @@ function compute_item_item_similarity (ids::Array, programs::Dict, genres::Dict)
       id2 = programs[ids[j]]
       if genres[ids[i]][1] == genres[ids[j]][1]
         if genres[ids[i]][2] == genres[ids[j]][2]
-          C[id1,id2] = C[id2,id1] = (1-0.6).*rand() + 0.6
+          C[id1,id2] = C[id2,id1] = (1-0.8).*rand() + 0.8
         else
-          C[id1,id2] = C[id2,id1] = (0.6-0.2).*rand() + 0.2
+          C[id1,id2] = C[id2,id1] = (0.6-0.4).*rand() + 0.4
         end
       else
-        C[id1,id2] = C[id2,id1] = (0.2).*rand()
+        C[id1,id2] = C[id2,id1] = (0.1).*rand()
       end
     end
   end
