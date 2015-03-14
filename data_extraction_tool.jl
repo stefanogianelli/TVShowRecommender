@@ -6,7 +6,7 @@ path = "$dir\\list.txt"
 trainingPath = "$dir\\training.txt"
 testingPath = "$dir\\testing.txt"
 #parametri
-test_number = 20
+test_number = 25
 percentage = 0.2
 
 dataset = readdlm(path, '\t', use_mmap=true)
@@ -25,8 +25,9 @@ total = test_number / percentage
 dim = size(dataset)[1]
 
 if dim >= total
-  testing = dataset[1:test_number,:]
-  training = dataset[(test_number+1):total,:]
+  start = int((dim-total-1).*rand() + 1)
+  testing = dataset[start:(start + test_number - 1),:]
+  training = dataset[(start + test_number):(start + total - 1),:]
 
   writedlm(trainingPath, training, "\t")
   writedlm(testingPath, testing, "\t")
@@ -34,5 +35,5 @@ if dim >= total
   println("Programmi di training: $(total - test_number)")
   println("Programmi di testing: $test_number")
 else
-  println("Limite non raggiunto! (dim = $dim)")
+  println("Limite non raggiunto! (dim = $dim, minimo = $total)")
 end
