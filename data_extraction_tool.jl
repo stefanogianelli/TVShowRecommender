@@ -6,7 +6,7 @@ path = "$dir\\list.txt"
 trainingPath = "$dir\\training.txt"
 testingPath = "$dir\\testing.txt"
 #parametri
-test_number = 25
+test_number = 20
 percentage = 0.2
 
 dataset = readdlm(path, '\t', use_mmap=true)
