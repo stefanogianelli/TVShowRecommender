@@ -206,8 +206,8 @@ for i = 1:test_number
     end
 
     #normalizzo i calcoli della precision e recall
-    precision[i] = totPrec / user_number
-    recall[i] = totRec / user_number
+    precision[i] = round((totPrec / user_number) * 100, 2)
+    recall[i] = round((totRec / user_number) * 100, 2)
   end
 end
 toc()
