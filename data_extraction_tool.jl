@@ -7,7 +7,7 @@ trainingPath = "$dir\\training.txt"
 testingPath = "$dir\\testing.txt"
 #parametri
 test_number = 25
-percentage = 0.1
+percentage = 0.2
 
 dataset = readdlm(path, '\t', use_mmap=true)
 j = size(dataset)[1]
@@ -31,6 +31,8 @@ if dim >= total
   writedlm(trainingPath, training, "\t")
   writedlm(testingPath, testing, "\t")
   println("File creati!")
+  println("Programmi di training: $(total - test_number)")
+  println("Programmi di testing: $test_number")
 else
   println("Limite non raggiunto! (dim = $dim)")
 end
