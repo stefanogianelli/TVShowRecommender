@@ -145,7 +145,6 @@ function gradient_descent (a::Number, MSize::Int, S::SparseMatrixCSC, C::SparseM
   gain = 1
   println("Start value = $fval")
   #calcolo la matrice M ottimale
-  i = 1
   while fval > tol && gain > tol
     Mnew = M - (a / MSize) * grad(M, T, Q)
     f = object(Mnew, S, C)
@@ -157,7 +156,6 @@ function gradient_descent (a::Number, MSize::Int, S::SparseMatrixCSC, C::SparseM
     else
       a /= 2
     end
-    i += 1
   end
   println("End value = $fval")
   return M
